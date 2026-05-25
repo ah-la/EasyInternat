@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\ActionHistoryController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DemandeController;
 use App\Http\Controllers\Api\DashboardController;
@@ -25,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/demandes', DemandeController::class)->except(['store']);
         Route::post('/demandes/{demande}/accept', [DemandeController::class, 'accept']);
         Route::post('/demandes/{demande}/refuse', [DemandeController::class, 'refuse']);
+        Route::get('/stagiaires/{stagiaire}/profile', [StagiaireController::class, 'profile']);
         Route::apiResource('/stagiaires', StagiaireController::class);
         Route::apiResource('/chambres', ChambreController::class);
         Route::apiResource('/paiements', PaiementController::class);
@@ -35,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:admin')->group(function () {
+        Route::get('/actions', [ActionHistoryController::class, 'index']);
         Route::apiResource('/responsables', ResponsableController::class)->except(['show']);
     });
 

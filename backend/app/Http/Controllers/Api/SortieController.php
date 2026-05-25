@@ -2,12 +2,21 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActionHistory;
 use App\Models\Sortie;
 use Illuminate\Http\Request;
 
 class SortieController extends Controller {
+    private function ensureVisible(Request $request, Sortie $sortie): void {
+        $category = $request->user()?->role === 'responsable' ? $request->user()->category : null;
+
+        if ($category && $sortie->stagiaire?->category !== $category) {
+            abort(403, 'Acces refuse pour cette categorie');
+        }
+    }
+
     public function index(Request $request) {
-        $query = Sortie::with('stagiaire');
+        $query = Sortie::with('stagiaire.chambre');
         $user = $request->user();
 
         if ($user && $user->role === 'responsable' && $user->category) {
@@ -16,6 +25,23 @@ class SortieController extends Controller {
 
         if ($user && $user->role === 'stagiaire') {
             $query->whereHas('stagiaire', fn($q) => $q->where('user_id', $user->id));
+        }
+
+        if ($request->filled('category') && $user?->role === 'admin') {
+            $query->whereHas('stagiaire', fn($q) => $q->where('category', $request->category));
+        }
+
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('date_sortie', $request->date);
+        }
+
+        if ($request->filled('chambre')) {
+            $chambre = $request->chambre;
+            $query->whereHas('stagiaire.chambre', fn($q) => $q->where('numero', 'like', '%'.$chambre.'%'));
         }
 
         return $query->latest()->paginate(20);
@@ -38,23 +64,37 @@ class SortieController extends Controller {
             return response()->json(['message' => 'Compte stagiaire introuvable'], 404);
         }
 
-        return Sortie::create($data + ['statut' => 'en_attente']);
+        return Sortie::create($data + ['statut' => 'en_attente'])->load('stagiaire.chambre');
     }
 
     public function update(Request $request, Sortie $sortie) {
+        $sortie->load('stagiaire');
+        $this->ensureVisible($request, $sortie);
+
         $data = $request->validate([
             'date_sortie' => 'sometimes|date',
             'date_retour' => 'sometimes|date|after_or_equal:date_sortie',
             'contact' => 'nullable|string|max:30',
             'motif' => 'nullable|string',
-            'statut' => 'sometimes|string',
+            'statut' => 'sometimes|in:en_attente,validee,refusee',
         ]);
 
+        $before = $sortie->only(['date_sortie', 'date_retour', 'contact', 'motif', 'statut']);
         $sortie->update($data);
-        return $sortie->load('stagiaire');
+
+        if (array_key_exists('statut', $data)) {
+            ActionHistory::record($request->user(), 'sortie_status_updated', $sortie, 'Statut sortie modifie', [
+                'before' => $before,
+                'after' => $sortie->only(['date_sortie', 'date_retour', 'contact', 'motif', 'statut']),
+            ]);
+        }
+
+        return $sortie->load('stagiaire.chambre');
     }
 
-    public function destroy(Sortie $sortie) {
+    public function destroy(Request $request, Sortie $sortie) {
+        $sortie->load('stagiaire');
+        $this->ensureVisible($request, $sortie);
         $sortie->delete();
         return response()->noContent();
     }

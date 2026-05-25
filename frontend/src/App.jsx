@@ -7,6 +7,7 @@ import Home from './pages/Home.jsx'
 import Dashboard from './pages/admin/Dashboard.jsx'
 import Stagiaires from './pages/Stagiaires.jsx'
 import StagiaireForm from './pages/StagiaireForm.jsx'
+import StagiaireProfile from './pages/StagiaireProfile.jsx'
 import Chambres from './pages/Chambres.jsx'
 import ChambreForm from './pages/ChambreForm.jsx'
 import Paiements from './pages/Paiements.jsx'
@@ -34,6 +35,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="stagiaires" element={<Stagiaires />} />
             <Route path="stagiaires/new" element={<StagiaireForm />} />
+            <Route path="stagiaires/:id" element={<StagiaireProfile />} />
             <Route path="stagiaires/:id/edit" element={<StagiaireForm />} />
             <Route path="demandes" element={<Demandes />} />
             <Route path="chambres" element={<Chambres />} />
@@ -54,6 +56,7 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="stagiaires" element={<Stagiaires />} />
             <Route path="stagiaires/new" element={<StagiaireForm />} />
+            <Route path="stagiaires/:id" element={<StagiaireProfile />} />
             <Route path="stagiaires/:id/edit" element={<StagiaireForm />} />
             <Route path="demandes" element={<Demandes />} />
             <Route path="chambres" element={<Chambres />} />

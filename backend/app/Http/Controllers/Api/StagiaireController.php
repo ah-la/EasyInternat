@@ -21,6 +21,15 @@ class StagiaireController extends Controller
         return $query;
     }
 
+    private function ensureVisible(Request $request, Stagiaire $stagiaire): void
+    {
+        $user = $request->user();
+
+        if ($user?->role === 'responsable' && $user->category && $stagiaire->category !== $user->category) {
+            abort(403, 'Acces refuse pour cette categorie');
+        }
+    }
+
     private function categoryFromGenre(string $genre): string
     {
         return str_contains(strtolower($genre), 'fille') ? 'filles' : 'garcons';
@@ -30,8 +39,21 @@ class StagiaireController extends Controller
     {
         $query = $this->scoped($request);
 
-        if ($request->filled('category')) {
+        if ($request->filled('category') && $request->user()?->role === 'admin') {
             $query->where('category', $request->category);
+        }
+
+        if ($request->filled('genre')) {
+            $query->where('genre', $this->categoryFromGenre($request->genre) === 'filles' ? 'Fille' : 'Garcon');
+        }
+
+        if ($request->filled('chambre_id')) {
+            $query->where('chambre_id', $request->chambre_id);
+        }
+
+        if ($request->filled('chambre')) {
+            $chambre = $request->chambre;
+            $query->whereHas('chambre', fn ($q) => $q->where('numero', 'like', '%'.$chambre.'%'));
         }
 
         if ($request->filled('search')) {
@@ -61,10 +83,22 @@ class StagiaireController extends Controller
         ]);
 
         $category = $this->categoryFromGenre($data['genre']);
+
+        if ($request->user()?->role === 'responsable' && $request->user()->category !== $category) {
+            abort(403, 'Acces refuse pour cette categorie');
+        }
+
         $chambreId = $data['chambre_id'] ?? null;
 
         if (!$chambreId && !empty($data['chambre_numero'])) {
             $chambreId = Chambre::where('numero', $data['chambre_numero'])->value('id');
+        }
+
+        if ($chambreId) {
+            $chambre = Chambre::find($chambreId);
+            if ($chambre && $chambre->category !== $category) {
+                return response()->json(['message' => 'La chambre ne correspond pas a la categorie du stagiaire'], 422);
+            }
         }
 
         $userId = null;
@@ -92,13 +126,30 @@ class StagiaireController extends Controller
         ])->load('chambre', 'user');
     }
 
-    public function show(Stagiaire $stagiaire)
+    public function show(Request $request, Stagiaire $stagiaire)
     {
+        $this->ensureVisible($request, $stagiaire);
         return $stagiaire->load('chambre', 'user');
+    }
+
+    public function profile(Request $request, Stagiaire $stagiaire)
+    {
+        $this->ensureVisible($request, $stagiaire);
+
+        return $stagiaire->load([
+            'user',
+            'chambre',
+            'paiements' => fn ($q) => $q->latest(),
+            'presences' => fn ($q) => $q->latest(),
+            'reclamations' => fn ($q) => $q->latest(),
+            'sorties' => fn ($q) => $q->latest(),
+        ]);
     }
 
     public function update(Request $request, Stagiaire $stagiaire)
     {
+        $this->ensureVisible($request, $stagiaire);
+
         $data = $request->validate([
             'nom' => 'sometimes|string|max:255',
             'prenom' => 'sometimes|nullable|string|max:255',
@@ -115,10 +166,22 @@ class StagiaireController extends Controller
         if (isset($data['genre'])) {
             $data['category'] = $this->categoryFromGenre($data['genre']);
             $data['genre'] = $data['category'] === 'filles' ? 'Fille' : 'Garcon';
+
+            if ($request->user()?->role === 'responsable' && $request->user()->category !== $data['category']) {
+                abort(403, 'Acces refuse pour cette categorie');
+            }
         }
 
         if (!empty($data['chambre_numero'])) {
             $data['chambre_id'] = Chambre::where('numero', $data['chambre_numero'])->value('id');
+        }
+
+        if (!empty($data['chambre_id'])) {
+            $targetCategory = $data['category'] ?? $stagiaire->category;
+            $chambre = Chambre::find($data['chambre_id']);
+            if ($chambre && $chambre->category !== $targetCategory) {
+                return response()->json(['message' => 'La chambre ne correspond pas a la categorie du stagiaire'], 422);
+            }
         }
 
         unset($data['email'], $data['password'], $data['chambre_numero']);
@@ -135,8 +198,9 @@ class StagiaireController extends Controller
         return $stagiaire->load('chambre', 'user');
     }
 
-    public function destroy(Stagiaire $stagiaire)
+    public function destroy(Request $request, Stagiaire $stagiaire)
     {
+        $this->ensureVisible($request, $stagiaire);
         $stagiaire->delete();
         return response()->noContent();
     }

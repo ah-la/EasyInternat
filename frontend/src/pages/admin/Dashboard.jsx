@@ -116,14 +116,14 @@ export default function Dashboard() {
       transition={{ duration: 0.35, ease: 'easeOut' }}
       className="space-y-6"
     >
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {dashboardStats.map((stat, index) => (
           <StatCard key={stat.label} {...stat} icon={statIcons[index]} />
         ))}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
-        <Card>
+      <div className="grid min-w-0 gap-6 xl:grid-cols-[1.4fr_0.9fr]">
+        <Card className="min-w-0 overflow-hidden">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-primary">Activite mensuelle</h2>
@@ -131,7 +131,7 @@ export default function Dashboard() {
             </div>
             <Badge tone="info">Mis a jour {format(new Date(), 'dd/MM/yyyy')}</Badge>
           </div>
-          <div className="h-80">
+          <div className="h-64 min-w-0 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={monthlyStats} barGap={8}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#CDEEFF" />
@@ -145,7 +145,7 @@ export default function Dashboard() {
           </div>
         </Card>
 
-        <Card>
+        <Card className="min-w-0 overflow-hidden">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-primary">Tendance paiements</h2>
@@ -153,7 +153,7 @@ export default function Dashboard() {
             </div>
             <CreditCard className="h-5 w-5 text-secondary" />
           </div>
-          <div className="h-80">
+          <div className="h-64 min-w-0 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyStats}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#CDEEFF" />
@@ -167,7 +167,7 @@ export default function Dashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
+      <div className="grid min-w-0 gap-6 xl:grid-cols-2">
         <DataTable title="Stagiaires recents" columns={tableColumns.stagiaires} rows={visibleStagiaires.slice(0, 4)} />
         <DataTable title="Chambres" columns={tableColumns.chambres} rows={visibleChambres.slice(0, 4)} />
         <DataTable title="Sorties recentes" columns={tableColumns.sorties} rows={visibleSorties.slice(0, 4)} />

@@ -20,12 +20,29 @@ class ChambreController extends Controller
         return $query;
     }
 
+    private function ensureVisible(Request $request, Chambre $chambre): void
+    {
+        $user = $request->user();
+
+        if ($user?->role === 'responsable' && $user->category && $chambre->category !== $user->category) {
+            abort(403, 'Acces refuse pour cette categorie');
+        }
+    }
+
     public function index(Request $request)
     {
         $query = $this->scoped($request);
 
-        if ($request->filled('category')) {
+        if ($request->filled('category') && $request->user()?->role === 'admin') {
             $query->where('category', $request->category);
+        }
+
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+
+        if ($request->filled('chambre')) {
+            $query->where('numero', 'like', '%'.$request->chambre.'%');
         }
 
         return $query->orderBy('numero')->paginate(100);
@@ -41,18 +58,25 @@ class ChambreController extends Controller
             'statut' => 'nullable|string|max:50',
         ]);
 
+        if ($request->user()?->role === 'responsable' && $request->user()->category !== $data['category']) {
+            abort(403, 'Acces refuse pour cette categorie');
+        }
+
         $data['statut'] = $data['statut'] ?? 'disponible';
 
         return Chambre::create($data)->load('stagiaires');
     }
 
-    public function show(Chambre $chambre)
+    public function show(Request $request, Chambre $chambre)
     {
+        $this->ensureVisible($request, $chambre);
         return $chambre->load('stagiaires');
     }
 
     public function update(Request $request, Chambre $chambre)
     {
+        $this->ensureVisible($request, $chambre);
+
         $data = $request->validate([
             'numero' => 'sometimes|string|max:50|unique:chambres,numero,'.$chambre->id,
             'etage' => 'nullable|string|max:100',
@@ -61,13 +85,18 @@ class ChambreController extends Controller
             'statut' => 'sometimes|string|max:50',
         ]);
 
+        if (isset($data['category']) && $request->user()?->role === 'responsable' && $request->user()->category !== $data['category']) {
+            abort(403, 'Acces refuse pour cette categorie');
+        }
+
         $chambre->update($data);
 
         return $chambre->load('stagiaires');
     }
 
-    public function destroy(Chambre $chambre)
+    public function destroy(Request $request, Chambre $chambre)
     {
+        $this->ensureVisible($request, $chambre);
         $chambre->delete();
         return response()->noContent();
     }

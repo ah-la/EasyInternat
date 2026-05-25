@@ -1,28 +1,104 @@
 import { useEffect, useState } from 'react'
+import { MessageSquareReply } from 'lucide-react'
 import DataTable from '../components/DataTable.jsx'
-import { filterStagiairesByRole, getCurrentRole } from '../lib/authRole.js'
+import Badge, { statusTone } from '../components/ui/Badge.jsx'
+import { getCurrentRole } from '../lib/authRole.js'
 import { store } from '../lib/store.js'
-
-const columns = [
-  { accessorKey: 'id', header: 'Reference' },
-  { accessorKey: 'stagiaire', header: 'Stagiaire' },
-  { accessorKey: 'chambre', header: 'Chambre' },
-  { accessorKey: 'type', header: 'Type' },
-  { accessorKey: 'sujet', header: 'Sujet' },
-  { accessorKey: 'message', header: 'Message' },
-  { accessorKey: 'statut', header: 'Statut' },
-  { accessorKey: 'priorite', header: 'Priorite' }
-]
 
 export default function Reclamations() {
   const [rows, setRows] = useState([])
+  const [filters, setFilters] = useState({ category: '', chambre: '', statut: '', type: '', date: '' })
+  const role = getCurrentRole()
 
   useEffect(() => {
-    Promise.all([store.getStagiaires(), store.getReclamations()]).then(([stagiaires, reclamations]) => {
-      const visibleStagiaires = filterStagiairesByRole(stagiaires, getCurrentRole())
-      setRows(reclamations.filter((reclamation) => visibleStagiaires.some((stagiaire) => stagiaire.nom === reclamation.stagiaire)))
-    })
-  }, [])
+    store.getReclamations(filters).then(setRows).catch(() => setRows([]))
+  }, [filters])
 
-  return <DataTable title="Reclamations" columns={columns} rows={rows} showHeading={false} />
+  const answerReclamation = async (row) => {
+    const reponse = window.prompt('Reponse admin', row.reponse_admin || '')
+    if (reponse === null) return
+
+    const updated = await store.updateReclamation(row.id, { reponse_admin: reponse, statut: 'traitee' })
+    setRows((current) => current.map((item) => (item.id === row.id ? updated : item)))
+  }
+
+  const columns = [
+    { accessorKey: 'id', header: 'Ref.' },
+    { accessorKey: 'nom', header: 'Nom' },
+    { accessorKey: 'prenom', header: 'Prenom' },
+    { accessorKey: 'cin', header: 'CIN' },
+    { accessorKey: 'telephone', header: 'Telephone' },
+    { accessorKey: 'chambre', header: 'Chambre' },
+    { accessorKey: 'categorie', header: 'Categorie' },
+    { accessorKey: 'type', header: 'Type' },
+    { accessorKey: 'sujet', header: 'Sujet' },
+    { accessorKey: 'message', header: 'Message' },
+    { accessorKey: 'statut', header: 'Statut', cell: ({ getValue }) => <Badge tone={statusTone(getValue())}>{getValue()}</Badge> },
+    { accessorKey: 'reponse_admin', header: 'Reponse' },
+    {
+      accessorKey: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <button
+          type="button"
+          onClick={() => answerReclamation(row.original)}
+          className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-white px-2 text-xs font-semibold text-primary hover:border-secondary/50"
+        >
+          <MessageSquareReply className="h-3.5 w-3.5" />
+          Repondre
+        </button>
+      )
+    }
+  ]
+
+  return (
+    <DataTable
+      title="Reclamations"
+      columns={columns}
+      rows={rows}
+      showHeading={false}
+      filters={
+        <div className="flex flex-wrap items-center gap-2">
+          {role === 'admin' ? (
+            <select
+              value={filters.category}
+              onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}
+              className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
+            >
+              <option value="">Tous</option>
+              <option value="filles">Filles</option>
+              <option value="garcons">Garcons</option>
+            </select>
+          ) : null}
+          <input
+            value={filters.chambre}
+            onChange={(event) => setFilters((current) => ({ ...current, chambre: event.target.value }))}
+            placeholder="Chambre"
+            className="h-10 w-28 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
+          />
+          <input
+            value={filters.type}
+            onChange={(event) => setFilters((current) => ({ ...current, type: event.target.value }))}
+            placeholder="Categorie"
+            className="h-10 w-32 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
+          />
+          <select
+            value={filters.statut}
+            onChange={(event) => setFilters((current) => ({ ...current, statut: event.target.value }))}
+            className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
+          >
+            <option value="">Statut</option>
+            <option value="en_attente">En attente</option>
+            <option value="traitee">Traitee</option>
+          </select>
+          <input
+            type="date"
+            value={filters.date}
+            onChange={(event) => setFilters((current) => ({ ...current, date: event.target.value }))}
+            className="h-10 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
+          />
+        </div>
+      }
+    />
+  )
 }

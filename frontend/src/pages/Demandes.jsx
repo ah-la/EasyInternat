@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, Clock3, X } from 'lucide-react'
 import { toast } from 'sonner'
 import DataTable from '../components/DataTable.jsx'
@@ -8,22 +8,21 @@ import { store } from '../lib/store.js'
 
 export default function Demandes() {
   const [rows, setRows] = useState([])
+  const [filters, setFilters] = useState({ category: '', statut: '', date: '' })
   const role = getCurrentRole()
-  const roleGender = role === 'responsable_filles' ? 'Fille' : role === 'responsable_garcons' ? 'Garcon' : null
-
-  const visibleRows = useMemo(() => {
-    if (!roleGender) return rows
-    return rows.filter((row) => row.genre === roleGender)
-  }, [rows, roleGender])
 
   useEffect(() => {
-    store.getDemandes().then(setRows).catch(() => setRows([]))
-  }, [])
+    store.getDemandes(filters).then(setRows).catch(() => setRows([]))
+  }, [filters])
 
   const updateStatus = async (id, statut) => {
     const demande = rows.find((row) => row.id === id)
     if (statut === 'Acceptee') await store.acceptDemande(id)
-    else if (statut === 'Refusee') await store.refuseDemande(id)
+    else if (statut === 'Refusee') {
+      const motif = window.prompt('Motif de refus', '')
+      if (motif === null) return
+      await store.refuseDemande(id, motif)
+    }
     else await store.updateDemande(id, { statut: 'liste_attente' })
 
     setRows((current) => current.map((row) => (row.id === id ? { ...row, statut } : row)))
@@ -86,5 +85,44 @@ export default function Demandes() {
     }
   ]
 
-  return <DataTable title="Demandes" columns={columns} rows={visibleRows} showHeading={false} />
+  return (
+    <DataTable
+      title="Demandes"
+      columns={columns}
+      rows={rows}
+      showHeading={false}
+      filters={
+        <div className="flex flex-wrap items-center gap-2">
+          {role === 'admin' ? (
+            <select
+              value={filters.category}
+              onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}
+              className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
+            >
+              <option value="">Tous</option>
+              <option value="filles">Filles</option>
+              <option value="garcons">Garcons</option>
+            </select>
+          ) : null}
+          <select
+            value={filters.statut}
+            onChange={(event) => setFilters((current) => ({ ...current, statut: event.target.value }))}
+            className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
+          >
+            <option value="">Statut</option>
+            <option value="en_attente">En attente</option>
+            <option value="liste_attente">Liste attente</option>
+            <option value="acceptee">Acceptee</option>
+            <option value="refusee">Refusee</option>
+          </select>
+          <input
+            type="date"
+            value={filters.date}
+            onChange={(event) => setFilters((current) => ({ ...current, date: event.target.value }))}
+            className="h-10 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
+          />
+        </div>
+      }
+    />
+  )
 }

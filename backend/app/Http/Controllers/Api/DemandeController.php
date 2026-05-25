@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Demande, StagiaireCentre, Stagiaire, User};
+use App\Models\{ActionHistory, Demande, StagiaireCentre, Stagiaire, User};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -20,6 +20,15 @@ class DemandeController extends Controller
         return $category === 'filles' ? 'Fille' : 'Garcon';
     }
 
+    private function ensureVisible(Request $request, Demande $demande): void
+    {
+        $user = $request->user();
+
+        if ($user?->role === 'responsable' && $user->category && $demande->genre !== $this->genreFromCategory($user->category)) {
+            abort(403, 'Acces refuse pour cette categorie');
+        }
+    }
+
     public function index(Request $request)
     {
         $query = Demande::latest();
@@ -27,6 +36,18 @@ class DemandeController extends Controller
 
         if ($user?->role === 'responsable' && $user->category) {
             $query->where('genre', $this->genreFromCategory($user->category));
+        }
+
+        if ($request->filled('category') && $user?->role === 'admin') {
+            $query->where('genre', $this->genreFromCategory($request->category));
+        }
+
+        if ($request->filled('statut')) {
+            $query->where('statut', $request->statut);
+        }
+
+        if ($request->filled('date')) {
+            $query->whereDate('created_at', $request->date);
         }
 
         return $query->paginate(20);
@@ -80,13 +101,16 @@ class DemandeController extends Controller
         return Demande::create($data);
     }
 
-    public function show(Demande $demande)
+    public function show(Request $request, Demande $demande)
     {
+        $this->ensureVisible($request, $demande);
         return $demande;
     }
 
     public function update(Request $request, Demande $demande)
     {
+        $this->ensureVisible($request, $demande);
+
         $data = $request->validate([
             'nom' => 'sometimes|string|max:255',
             'prenom' => 'sometimes|nullable|string|max:255',
@@ -96,7 +120,7 @@ class DemandeController extends Controller
             'telephone' => 'sometimes|string|max:30',
             'genre' => 'sometimes|string',
             'filiere' => 'sometimes|string|max:255',
-            'statut' => 'sometimes|string',
+            'statut' => 'sometimes|in:en_attente,liste_attente,acceptee,refusee',
             'motif_refus' => 'sometimes|nullable|string',
         ]);
 
@@ -109,14 +133,17 @@ class DemandeController extends Controller
         return $demande;
     }
 
-    public function destroy(Demande $demande)
+    public function destroy(Request $request, Demande $demande)
     {
+        $this->ensureVisible($request, $demande);
         $demande->delete();
         return response()->noContent();
     }
 
-    public function accept(Demande $demande)
+    public function accept(Request $request, Demande $demande)
     {
+        $this->ensureVisible($request, $demande);
+
         $password = Str::password(8);
         $category = $this->categoryFromGenre($demande->genre);
 
@@ -144,6 +171,9 @@ class DemandeController extends Controller
         );
 
         $demande->update(['statut' => 'acceptee']);
+        ActionHistory::record($request->user(), 'demande_accepted', $demande, 'Demande acceptee', [
+            'stagiaire_id' => $stagiaire->id,
+        ]);
 
         return response()->json([
             'message' => 'Demande acceptee',
@@ -155,9 +185,18 @@ class DemandeController extends Controller
 
     public function refuse(Request $request, Demande $demande)
     {
+        $this->ensureVisible($request, $demande);
+
+        $data = $request->validate([
+            'motif_refus' => 'nullable|string|max:1000',
+        ]);
+
         $demande->update([
             'statut' => 'refusee',
-            'motif_refus' => $request->input('motif_refus'),
+            'motif_refus' => $data['motif_refus'] ?? null,
+        ]);
+        ActionHistory::record($request->user(), 'demande_refused', $demande, 'Demande refusee', [
+            'motif_refus' => $data['motif_refus'] ?? null,
         ]);
 
         return $demande;

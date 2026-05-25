@@ -2,6 +2,8 @@ import api from '../services/api.js'
 
 const unwrap = (payload) => (Array.isArray(payload?.data) ? payload.data : payload)
 const fullName = (row = {}) => [row.nom, row.prenom].filter(Boolean).join(' ').trim() || row.name || ''
+const cleanParams = (params = {}) =>
+  Object.fromEntries(Object.entries(params).filter(([, value]) => value !== '' && value !== null && value !== undefined))
 
 export function categoryToLabel(category = '') {
   return category === 'filles' ? 'Filles' : 'Garcons'
@@ -34,11 +36,14 @@ const mapStagiaire = (row = {}) => ({
   ...row,
   id: String(row.id),
   nom: fullName(row),
+  nom_simple: row.nom || '',
   prenom: row.prenom || '',
+  fullName: fullName(row),
   email: row.user?.email || row.email || '',
   genre: row.genre || categoryToGenre(row.category),
   categorie: categoryToLabel(row.category),
   chambre: row.chambre?.numero || row.chambre || '',
+  chambreDetails: row.chambre && typeof row.chambre === 'object' ? row.chambre : null,
   chambre_id: row.chambre_id || row.chambre?.id || '',
   paiement: row.paiement || ''
 })
@@ -79,6 +84,9 @@ const mapPaiement = (row = {}) => ({
   ...row,
   id: String(row.id),
   stagiaire: row.stagiaire ? fullName(row.stagiaire) : row.stagiaire,
+  stagiaire_id: row.stagiaire_id || row.stagiaire?.id || '',
+  chambre: row.stagiaire?.chambre?.numero || '',
+  categorie: categoryToLabel(row.stagiaire?.category || row.category),
   montant: `${Number(row.montant || 0)} DH`,
   statut: row.statut === 'paye' ? 'Paye' : row.statut === 'en_retard' ? 'En retard' : 'Non paye',
   date: row.date_paiement || ''
@@ -89,6 +97,8 @@ const mapSortie = (row = {}) => ({
   id: String(row.id),
   stagiaire: row.stagiaire ? fullName(row.stagiaire) : '',
   genre: row.stagiaire?.genre || categoryToGenre(row.stagiaire?.category),
+  chambre: row.stagiaire?.chambre?.numero || '',
+  categorie: categoryToLabel(row.stagiaire?.category),
   dateSortie: row.date_sortie,
   dateRetour: row.date_retour,
   statut: row.statut
@@ -98,19 +108,42 @@ const mapReclamation = (row = {}) => ({
   ...row,
   id: String(row.id),
   stagiaire: row.stagiaire ? fullName(row.stagiaire) : '',
+  nom: row.stagiaire?.nom || '',
+  prenom: row.stagiaire?.prenom || '',
+  cin: row.stagiaire?.cin || '',
+  telephone: row.stagiaire?.telephone || '',
   chambre: row.stagiaire?.chambre?.numero || '',
+  categorie: categoryToLabel(row.stagiaire?.category),
+  email: row.stagiaire?.user?.email || '',
+  date: row.created_at ? String(row.created_at).slice(0, 10) : '',
   priorite: row.priorite || 'Normale'
 })
 
-async function list(path, mapper) {
-  const { data } = await api.get(path)
+const mapPresence = (row = {}) => ({
+  ...row,
+  id: String(row.id),
+  date: row.date || '',
+  statut: row.statut || ''
+})
+
+const mapProfile = (row = {}) => ({
+  ...mapStagiaire(row),
+  paiements: (row.paiements || []).map(mapPaiement),
+  presences: (row.presences || []).map(mapPresence),
+  reclamations: (row.reclamations || []).map(mapReclamation),
+  sorties: (row.sorties || []).map(mapSortie)
+})
+
+async function list(path, mapper, params = {}) {
+  const { data } = await api.get(path, { params: cleanParams(params) })
   return unwrap(data).map(mapper)
 }
 
 export const store = {
   getDashboard: async () => (await api.get('/dashboard')).data,
 
-  getStagiaires: () => list('/stagiaires', mapStagiaire),
+  getStagiaires: (params) => list('/stagiaires', mapStagiaire, params),
+  getStagiaireProfile: async (id) => mapProfile((await api.get(`/stagiaires/${id}/profile`)).data),
   createStagiaire: async (payload) => mapStagiaire((await api.post('/stagiaires', payload)).data),
   updateStagiaire: async (id, payload) => mapStagiaire((await api.put(`/stagiaires/${id}`, payload)).data),
   deleteStagiaire: (id) => api.delete(`/stagiaires/${id}`),
@@ -120,24 +153,25 @@ export const store = {
   updateResponsable: async (id, payload) => mapResponsable((await api.put(`/responsables/${id}`, payload)).data),
   deleteResponsable: (id) => api.delete(`/responsables/${id}`),
 
-  getDemandes: () => list('/demandes', mapDemande),
+  getDemandes: (params) => list('/demandes', mapDemande, params),
   acceptDemande: (id) => api.post(`/demandes/${id}/accept`),
   refuseDemande: (id, motif_refus = '') => api.post(`/demandes/${id}/refuse`, { motif_refus }),
   updateDemande: (id, payload) => api.put(`/demandes/${id}`, payload),
 
-  getChambres: () => list('/chambres', mapChambre),
+  getChambres: (params) => list('/chambres', mapChambre, params),
   createChambre: async (payload) => mapChambre((await api.post('/chambres', payload)).data),
   updateChambre: async (id, payload) => mapChambre((await api.put(`/chambres/${id}`, payload)).data),
   deleteChambre: (id) => api.delete(`/chambres/${id}`),
 
-  getPaiements: () => list('/paiements', mapPaiement),
+  getPaiements: (params) => list('/paiements', mapPaiement, params),
   createPaiement: async (payload) => mapPaiement((await api.post('/paiements', payload)).data),
+  updatePaiement: async (id, payload) => mapPaiement((await api.put(`/paiements/${id}`, payload)).data),
 
-  getSorties: () => list('/sorties', mapSortie),
+  getSorties: (params) => list('/sorties', mapSortie, params),
   createSortie: async (payload) => mapSortie((await api.post('/sorties', payload)).data),
   updateSortie: async (id, payload) => mapSortie((await api.put(`/sorties/${id}`, payload)).data),
 
-  getReclamations: () => list('/reclamations', mapReclamation),
+  getReclamations: (params) => list('/reclamations', mapReclamation, params),
   createReclamation: async (payload) => mapReclamation((await api.post('/reclamations', payload)).data),
   updateReclamation: async (id, payload) => mapReclamation((await api.put(`/reclamations/${id}`, payload)).data),
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Check, X } from 'lucide-react'
 import DataTable from '../components/DataTable.jsx'
 import Badge, { statusTone } from '../components/ui/Badge.jsx'
@@ -7,17 +7,12 @@ import { store } from '../lib/store.js'
 
 export default function Presences() {
   const [rows, setRows] = useState([])
+  const [filters, setFilters] = useState({ category: '', chambre: '', statut: '', date: '' })
   const role = getCurrentRole()
-  const roleGender = role === 'responsable_filles' ? 'Fille' : role === 'responsable_garcons' ? 'Garcon' : null
-
-  const visibleRows = useMemo(() => {
-    if (!roleGender) return rows
-    return rows.filter((row) => row.genre === roleGender)
-  }, [rows, roleGender])
 
   useEffect(() => {
-    store.getSorties().then(setRows).catch(() => setRows([]))
-  }, [])
+    store.getSorties(filters).then(setRows).catch(() => setRows([]))
+  }, [filters])
 
   const updateStatus = async (id, statut) => {
     await store.updateSortie(id, { statut: statut === 'Validee' ? 'validee' : 'refusee' })
@@ -62,5 +57,49 @@ export default function Presences() {
     }
   ]
 
-  return <DataTable title="Sorties" columns={columns} rows={visibleRows} showHeading={false} />
+  return (
+    <DataTable
+      title="Sorties"
+      columns={columns}
+      rows={rows}
+      showHeading={false}
+      filters={
+        <div className="flex flex-wrap items-center gap-2">
+          {role === 'admin' ? (
+            <select
+              value={filters.category}
+              onChange={(event) => setFilters((current) => ({ ...current, category: event.target.value }))}
+              className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
+            >
+              <option value="">Tous</option>
+              <option value="filles">Filles</option>
+              <option value="garcons">Garcons</option>
+            </select>
+          ) : null}
+          <input
+            value={filters.chambre}
+            onChange={(event) => setFilters((current) => ({ ...current, chambre: event.target.value }))}
+            placeholder="Chambre"
+            className="h-10 w-28 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
+          />
+          <select
+            value={filters.statut}
+            onChange={(event) => setFilters((current) => ({ ...current, statut: event.target.value }))}
+            className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
+          >
+            <option value="">Statut</option>
+            <option value="en_attente">En attente</option>
+            <option value="validee">Validee</option>
+            <option value="refusee">Refusee</option>
+          </select>
+          <input
+            type="date"
+            value={filters.date}
+            onChange={(event) => setFilters((current) => ({ ...current, date: event.target.value }))}
+            className="h-10 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
+          />
+        </div>
+      }
+    />
+  )
 }

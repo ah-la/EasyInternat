@@ -15,6 +15,17 @@ class PresenceController extends Controller
             ->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)));
 
         if ($request->filled('date')) $query->whereDate('date', $request->date);
+        if ($request->filled('statut')) $query->where('statut', $request->statut);
+        if ($request->filled('category') && $request->user()?->role === 'admin') {
+            $query->whereHas('stagiaire', fn ($q) => $q->where('category', $request->category));
+        }
+        if ($request->filled('chambre')) {
+            $chambre = $request->chambre;
+            $query->whereHas('stagiaire.chambre', fn ($q) => $q->where('numero', 'like', '%'.$chambre.'%'));
+        }
+        if ($request->filled('chambre_id')) {
+            $query->whereHas('stagiaire', fn ($q) => $q->where('chambre_id', $request->chambre_id));
+        }
 
         return $query->latest()->paginate(100);
     }
