@@ -33,6 +33,7 @@ php artisan serve
 API et application : http://127.0.0.1:8000
 
 Si votre MySQL n'utilise pas le port `3306`, modifiez `DB_PORT` dans `backend/.env`.
+Le fichier `backend/.env.example` est seulement un modele public : copiez-le vers `.env`, puis remplacez `your_database_name`, `your_database_user` et `your_database_password` par vos propres valeurs locales.
 
 ### Frontend React
 
