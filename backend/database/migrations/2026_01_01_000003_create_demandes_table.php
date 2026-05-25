@@ -1,0 +1,3 @@
+<?php
+use Illuminate\Database\Migrations\Migration; use Illuminate\Database\Schema\Blueprint; use Illuminate\Support\Facades\Schema;
+return new class extends Migration { public function up(): void { Schema::create('demandes', function(Blueprint $table){ $table->id(); $table->string('nom'); $table->string('prenom'); $table->string('cin'); $table->string('numero_inscription')->nullable(); $table->string('email'); $table->string('telephone'); $table->string('genre'); $table->string('filiere'); $table->string('certificat_residence')->nullable(); $table->string('statut')->default('en_attente'); $table->text('motif_refus')->nullable(); $table->timestamps(); }); } public function down(): void { Schema::dropIfExists('demandes'); } };

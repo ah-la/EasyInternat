@@ -1,0 +1,58 @@
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.fleet/
+.zed/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/auth.json
+
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/vendor/
+
+# Build / runtime caches
+frontend/dist/
+backend/public/build/
+backend/public/hot
+backend/public/storage
+backend/bootstrap/cache/*.php
+!backend/bootstrap/cache/.gitignore
+
+# Laravel storage generated files
+backend/storage/*.key
+backend/storage/logs/*.log
+backend/storage/framework/cache/data/*
+!backend/storage/framework/cache/data/.gitignore
+backend/storage/framework/sessions/*
+!backend/storage/framework/sessions/.gitignore
+backend/storage/framework/views/*
+!backend/storage/framework/views/.gitignore
+backend/storage/framework/testing/*
+!backend/storage/framework/testing/.gitignore
+backend/storage/app/public/*
+!backend/storage/app/public/.gitignore
+backend/storage/app/private/*
+!backend/storage/app/private/.gitignore
+
+# Local databases / test caches
+backend/database/*.sqlite
+backend/database/*.sqlite-*
+backend/gestion_residence_cmc
+backend/.phpunit.cache/
+backend/.phpunit.result.cache
+backend/phpunit.result.cache
+
+# Logs and temporary files
+*.log
+*.tmp
+*.bak

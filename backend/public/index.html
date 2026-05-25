@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EasyInternat</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <script type="module" crossorigin src="/assets/index-R90fPXU8.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DQdwJ-cE.css">
+  </head>
+  <body>
+    <div id="root">
+      <div style="min-height:100vh;display:grid;place-items:center;background:#f6fbff;color:#073b5c;font-family:Inter,Arial,sans-serif">
+        <div style="text-align:center">
+          <strong>EasyInternat</strong>
+          <div style="margin-top:8px;color:#64748b">Chargement...</div>
+        </div>
+      </div>
+    </div>
+    <script>
+      window.addEventListener('error', function (event) {
+        var root = document.getElementById('root')
+        if (!root) return
+        var details = String(event.message || 'Erreur inconnue')
+        if (event.error && event.error.stack) details += '\n\n' + event.error.stack
+        root.innerHTML = '<div style="min-height:100vh;display:grid;place-items:center;background:#f6fbff;color:#073b5c;font-family:Inter,Arial,sans-serif;padding:24px"><div style="max-width:720px;border:1px solid #fecaca;background:#fff;border-radius:12px;padding:20px;box-shadow:0 12px 32px rgba(7,59,92,.08)"><h1 style="margin:0 0 10px;font-size:22px;color:#b91c1c">Erreur JavaScript</h1><p style="margin:0;color:#475569">Rechargez avec Ctrl+F5. Si ce message reste, envoyez le texte ci-dessous.</p><pre style="white-space:pre-wrap;margin-top:14px;color:#7f1d1d;background:#fef2f2;border-radius:8px;padding:12px">' + details.replace(/[&<>"']/g, function (c) { return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;", "'": "&#39;" })[c] }) + '</pre></div></div>'
+      })
+    </script>
+  </body>
+</html>

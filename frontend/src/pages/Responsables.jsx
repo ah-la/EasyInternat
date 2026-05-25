@@ -1,0 +1,64 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Pencil, Plus, Trash2 } from 'lucide-react'
+import DataTable from '../components/DataTable.jsx'
+import Button from '../components/ui/Button.jsx'
+import { store } from '../lib/store.js'
+
+export default function Responsables() {
+  const [rows, setRows] = useState([])
+
+  useEffect(() => {
+    store.getResponsables().then(setRows).catch(() => setRows([]))
+  }, [])
+
+  const deleteRow = async (id) => {
+    await store.deleteResponsable(id)
+    setRows((current) => current.filter((row) => row.id !== id))
+  }
+
+  const columns = [
+    { accessorKey: 'nom', header: 'Nom' },
+    { accessorKey: 'email', header: 'Email' },
+    { accessorKey: 'categorie', header: 'Categorie' },
+    { accessorKey: 'statut', header: 'Statut' },
+    {
+      accessorKey: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <div className="flex flex-nowrap items-center justify-center gap-2">
+          <Link
+            to={`/admin/responsables/${row.original.id}/edit`}
+            className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-white px-2 text-xs font-semibold text-primary hover:border-secondary/50"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+            Modifier
+          </Link>
+          <button
+            type="button"
+            onClick={() => deleteRow(row.original.id)}
+            className="inline-flex h-8 items-center gap-1 rounded-lg border border-red-100 bg-white px-2 text-xs font-semibold text-danger hover:bg-red-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            Supprimer
+          </button>
+        </div>
+      )
+    }
+  ]
+
+  return (
+    <DataTable
+      title="Responsables"
+      columns={columns}
+      rows={rows}
+      showHeading={false}
+      actions={
+        <Button as={Link} to="/admin/responsables/new">
+          <Plus className="h-4 w-4" />
+          Ajouter responsable
+        </Button>
+      }
+    />
+  )
+}
