@@ -235,8 +235,33 @@ export default function Home() {
         <img src="/assets/easyinternat-logo-transparent.png" alt="EasyInternat" className="landing-logo" />
       </header>
 
+      <span className="landing-shape one" aria-hidden="true" />
+      <span className="landing-shape two" aria-hidden="true" />
+
       <section className="landing-content">
-        <div aria-hidden="true" />
+        <div className="landing-hero-copy">
+          <span className="landing-kicker">Internat CMC Management</span>
+          <h1 className="landing-title">
+            Easy<span>Internat</span>
+          </h1>
+          <p className="landing-subtitle">
+            Une plateforme moderne pour gerer les demandes, chambres, paiements, presences et reclamations avec une experience claire pour chaque role.
+          </p>
+          <div className="landing-metrics" aria-label="Indicateurs">
+            <div className="landing-metric">
+              <strong>10+</strong>
+              <span>Stagiaires demo</span>
+            </div>
+            <div className="landing-metric">
+              <strong>3</strong>
+              <span>Espaces roles</span>
+            </div>
+            <div className="landing-metric">
+              <strong>PDF</strong>
+              <span>Exports inclus</span>
+            </div>
+          </div>
+        </div>
         <AuthPanel />
       </section>
     </main>

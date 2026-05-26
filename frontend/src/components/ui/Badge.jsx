@@ -30,7 +30,7 @@ export default function Badge({ children, tone = 'neutral', className }) {
   return (
     <span
       className={cn(
-        'inline-flex h-7 items-center rounded-full border px-2.5 text-xs font-semibold',
+        'inline-flex h-8 items-center rounded-full border px-3 text-xs font-black shadow-[0_8px_18px_rgba(15,23,42,0.04)]',
         toneMap[tone] || toneMap.neutral,
         className
       )}

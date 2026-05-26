@@ -23,7 +23,7 @@ export default function Button({
   return (
     <Component
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition focus:outline-none focus:ring-4 focus:ring-secondary/20 disabled:cursor-not-allowed disabled:opacity-60',
+        'inline-flex items-center justify-center gap-2 rounded-xl font-bold transition-all duration-300 hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-secondary/20 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:scale-100',
         variants[variant],
         sizes[size],
         className
