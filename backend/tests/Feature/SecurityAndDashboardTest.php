@@ -208,4 +208,48 @@ class SecurityAndDashboardTest extends TestCase
         ])->assertSuccessful()
             ->assertJsonPath('statut', 'paye');
     }
+
+    public function test_stagiaire_creation_creates_account_and_blocks_full_room(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $room = Chambre::factory()->create(['category' => 'filles', 'capacite' => 1]);
+
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson('/api/stagiaires', [
+            'nom' => 'Aya',
+            'prenom' => 'Test',
+            'cin' => 'AA1000',
+            'telephone' => '0600000000',
+            'genre' => 'Fille',
+            'filiere' => 'Developpement Digital',
+            'chambre_id' => $room->id,
+            'email' => 'aya.test@cmc.test',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ]);
+
+        $response->assertSuccessful()
+            ->assertJsonPath('user.role', 'stagiaire')
+            ->assertJsonPath('chambre.id', $room->id);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'aya.test@cmc.test',
+            'role' => 'stagiaire',
+            'category' => 'filles',
+        ]);
+
+        $this->postJson('/api/stagiaires', [
+            'nom' => 'Nour',
+            'prenom' => 'Test',
+            'cin' => 'AA1001',
+            'telephone' => '0600000001',
+            'genre' => 'Fille',
+            'filiere' => 'Developpement Digital',
+            'chambre_id' => $room->id,
+            'email' => 'nour.test@cmc.test',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+        ])->assertUnprocessable();
+    }
 }

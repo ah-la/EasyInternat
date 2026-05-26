@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import DataTable from '../components/DataTable.jsx'
 import Badge, { statusTone } from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
@@ -15,7 +16,7 @@ const genreClass = (genre = '') =>
 export default function Stagiaires() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ search: '', category: '', chambre: '' })
+  const [filters, setFilters] = useState({ search: '', category: '', chambre: '', payment_status: '' })
   const role = getCurrentRole()
   const basePath = role === 'admin' ? '/admin' : '/responsable'
   const visibleRows = useMemo(() => filterStagiairesByRole(rows, role), [rows, role])
@@ -29,6 +30,7 @@ export default function Stagiaires() {
     if (!window.confirm('Vous voulez vraiment supprimer ce stagiaire ?')) return
     await store.deleteStagiaire(id)
     setRows((current) => current.filter((row) => row.id !== id))
+    toast.success('Stagiaire supprime avec succes.')
   }
 
   const columns = [
@@ -123,6 +125,16 @@ export default function Stagiaires() {
             placeholder="Chambre"
             className="h-10 w-28 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
           />
+          <select
+            value={filters.payment_status}
+            onChange={(event) => setFilters((current) => ({ ...current, payment_status: event.target.value }))}
+            className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
+          >
+            <option value="">Paiement</option>
+            <option value="paye">Paye</option>
+            <option value="en_retard">En retard</option>
+            <option value="a_payer">Non paye</option>
+          </select>
         </div>
       }
     />

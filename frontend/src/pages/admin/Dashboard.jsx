@@ -16,7 +16,6 @@ import StatCard from '../../components/StatCard.jsx'
 import Card from '../../components/ui/Card.jsx'
 import Badge, { statusTone } from '../../components/ui/Badge.jsx'
 import DataTable from '../../components/DataTable.jsx'
-import { monthlyStats } from '../../data/mockData.js'
 import { filterStagiairesByRole, getCurrentRole, getRoleInfo } from '../../lib/authRole.js'
 import { store } from '../../lib/store.js'
 
@@ -66,6 +65,7 @@ export default function Dashboard() {
   const [allChambres, setAllChambres] = useState([])
   const [allPaiements, setAllPaiements] = useState([])
   const [loading, setLoading] = useState(true)
+  const [seenNotificationKeys, setSeenNotificationKeys] = useState(() => new Set(JSON.parse(sessionStorage.getItem('easyinternat-seen-notifications') || '[]')))
 
   useEffect(() => {
     setLoading(true)
@@ -95,8 +95,17 @@ export default function Dashboard() {
   const visibleSorties = roleInfo.gender ? allSorties.filter((sortie) => sortie.genre === roleInfo.gender) : allSorties
   const pendingDemandes = allDemandes.filter((demande) => demande.statut === 'En attente')
   const latePayments = visiblePaiements.filter((paiement) => paiement.statut !== 'Paye')
-  const notifications = summary.notifications || []
+  const notificationKey = (item) => `${item.type}:${item.count}:${item.message}`
+  const notifications = (summary.notifications || []).filter((item) => !seenNotificationKeys.has(notificationKey(item)))
+  const monthlyActivity = summary.monthly_activity?.length ? summary.monthly_activity : []
   const basePath = role === 'admin' ? '/admin' : '/responsable'
+
+  const markNotificationSeen = (item) => {
+    const next = new Set(seenNotificationKeys)
+    next.add(notificationKey(item))
+    sessionStorage.setItem('easyinternat-seen-notifications', JSON.stringify([...next]))
+    setSeenNotificationKeys(next)
+  }
 
   const dashboardStats = [
     {
@@ -105,29 +114,29 @@ export default function Dashboard() {
       hint: roleInfo.gender
         ? `${visibleStagiaires.length} ${roleInfo.gender.toLowerCase()}${visibleStagiaires.length > 1 ? 's' : ''}`
         : `${visibleStagiaires.filter((row) => row.genre === 'Fille').length} filles, ${visibleStagiaires.filter((row) => row.genre === 'Garcon').length} garcons`,
-      trend: '+12% ce mois',
+      trend: 'Depuis la base de donnees',
       tone: 'success'
     },
     {
       label: 'Chambres occupees',
       value: `${summary.chambres_occupees ?? visibleChambres.filter((chambre) => chambre.occupants > 0).length}/${summary.chambres_total ?? visibleChambres.length}`,
       hint: 'Selon les chambres visibles',
-      trend: 'Occupation suivie',
+      trend: 'Temps reel',
       tone: 'info'
     },
     {
       label: 'Demandes en attente',
       value: summary.demandes_en_attente ?? pendingDemandes.length,
       hint: 'A traiter dans Demandes',
-      trend: 'A prioriser',
+      trend: 'Selon les demandes',
       tone: 'warning'
     },
     {
       label: 'Paiements en retard',
       value: summary.paiements_retard ?? latePayments.length,
       hint: 'Dossiers a suivre',
-      trend: '-5% cette semaine',
-      tone: latePayments.length > 0 ? 'warning' : 'success'
+      trend: 'Calcule automatiquement',
+      tone: (summary.paiements_retard ?? latePayments.length) > 0 ? 'warning' : 'success'
     }
   ]
 
@@ -162,7 +171,7 @@ export default function Dashboard() {
           </div>
           <div className="h-64 min-w-0 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyStats} barGap={8}>
+              <BarChart data={monthlyActivity} barGap={8}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#CDEEFF" />
                 <XAxis dataKey="month" stroke="#64748B" tickLine={false} axisLine={false} />
                 <YAxis stroke="#64748B" tickLine={false} axisLine={false} />
@@ -183,7 +192,7 @@ export default function Dashboard() {
           </div>
           <div className="h-64 min-w-0 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyStats}>
+              <LineChart data={monthlyActivity}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#CDEEFF" />
                 <XAxis dataKey="month" stroke="#64748B" tickLine={false} axisLine={false} />
                 <YAxis stroke="#64748B" tickLine={false} axisLine={false} />
@@ -215,6 +224,7 @@ export default function Dashboard() {
               >
                 <Link
                   to={`${basePath}/${item.target}`}
+                  onClick={() => markNotificationSeen(item)}
                   className="block h-full rounded-2xl border border-sky-100 bg-white p-4 shadow-subtle transition hover:-translate-y-0.5 hover:border-secondary/40 hover:shadow-soft"
                 >
                   <div className="flex items-start justify-between gap-3">

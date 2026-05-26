@@ -38,6 +38,7 @@ class DashboardController extends Controller
             'paiements_retard' => $latePayments,
             'reclamations_ouvertes' => (clone $reclamations)->whereIn('statut', ['en_attente', 'en_cours'])->count(),
             'sorties_en_attente' => (clone $sorties)->where('statut', 'en_attente')->count(),
+            'monthly_activity' => $this->monthlyActivity($category),
             'notifications' => $this->notifications(
                 demandes: clone $demandes,
                 reclamations: clone $reclamations,
@@ -46,6 +47,51 @@ class DashboardController extends Controller
                 latePayments: $latePayments
             ),
         ]);
+    }
+
+    private function monthlyActivity(?string $category): Collection
+    {
+        return collect(range(4, 0))
+            ->map(fn (int $offset) => now()->startOfMonth()->subMonths($offset))
+            ->map(function ($month) use ($category) {
+                $sorties = Sortie::query()
+                    ->whereBetween('date_sortie', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                    ->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)))
+                    ->count();
+
+                $paiementsTotal = Paiement::query()
+                    ->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)))
+                    ->where(function ($query) use ($month) {
+                        $query
+                            ->whereBetween('date_paiement', [$month->copy()->startOfMonth(), $month->copy()->endOfMonth()])
+                            ->orWhere('mois', $this->monthLabel($month));
+                    })
+                    ->sum('montant');
+
+                return [
+                    'month' => $this->monthLabel($month),
+                    'sorties' => $sorties,
+                    'paiements' => (float) $paiementsTotal,
+                ];
+            });
+    }
+
+    private function monthLabel($month): string
+    {
+        return [
+            1 => 'Janvier',
+            2 => 'Fevrier',
+            3 => 'Mars',
+            4 => 'Avril',
+            5 => 'Mai',
+            6 => 'Juin',
+            7 => 'Juillet',
+            8 => 'Aout',
+            9 => 'Septembre',
+            10 => 'Octobre',
+            11 => 'Novembre',
+            12 => 'Decembre',
+        ][(int) $month->month];
     }
 
     private function notifications($demandes, $reclamations, $paiements, $sorties, int $latePayments): Collection

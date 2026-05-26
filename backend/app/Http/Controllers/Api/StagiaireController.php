@@ -71,6 +71,12 @@ class StagiaireController extends Controller
 
         $stagiaires = $query->latest()->paginate(100);
         $stagiaires->getCollection()->transform(fn (Stagiaire $stagiaire) => $this->paymentStatus->decorate($stagiaire));
+        if ($request->filled('payment_status')) {
+            $wanted = $request->payment_status;
+            $stagiaires->setCollection($stagiaires->getCollection()->filter(
+                fn (Stagiaire $stagiaire) => $stagiaire->payment_status === $wanted
+            )->values());
+        }
 
         return $stagiaires;
     }
@@ -81,13 +87,13 @@ class StagiaireController extends Controller
             'nom' => 'required|string|max:255',
             'prenom' => 'nullable|string|max:255',
             'cin' => 'required|string|max:50|unique:stagiaires,cin',
-            'telephone' => 'nullable|string|max:30',
+            'telephone' => 'required|string|max:30',
             'genre' => 'required|string',
-            'filiere' => 'nullable|string|max:255',
+            'filiere' => 'required|string|max:255',
             'chambre_id' => 'nullable|exists:chambres,id',
             'chambre_numero' => 'nullable|string|exists:chambres,numero',
-            'email' => 'nullable|email|unique:users,email',
-            'password' => 'nullable|string|min:6',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6|confirmed',
         ]);
 
         $category = $this->categoryFromGenre($data['genre']);
@@ -102,33 +108,37 @@ class StagiaireController extends Controller
             $chambreId = Chambre::where('numero', $data['chambre_numero'])->value('id');
         }
 
+        if (!$chambreId) {
+            return response()->json(['message' => 'La chambre est obligatoire'], 422);
+        }
+
         if ($chambreId) {
             $chambre = Chambre::find($chambreId);
             if ($chambre && $chambre->category !== $category) {
                 return response()->json(['message' => 'La chambre ne correspond pas a la categorie du stagiaire'], 422);
             }
+
+            if ($chambre && $chambre->stagiaires()->count() >= $chambre->capacite) {
+                return response()->json(['message' => 'La chambre a atteint sa capacite maximale'], 422);
+            }
         }
 
-        $userId = null;
-        if (!empty($data['email'])) {
-            $user = User::create([
-                'name' => trim($data['nom'].' '.($data['prenom'] ?? '')),
-                'email' => $data['email'],
-                'password' => Hash::make($data['password'] ?? 'password'),
-                'role' => 'stagiaire',
-                'category' => $category,
-            ]);
-            $userId = $user->id;
-        }
+        $user = User::create([
+            'name' => trim($data['nom'].' '.($data['prenom'] ?? '')),
+            'email' => $data['email'],
+            'password' => Hash::make($data['password']),
+            'role' => 'stagiaire',
+            'category' => $category,
+        ]);
 
         $stagiaire = Stagiaire::create([
-            'user_id' => $userId,
+            'user_id' => $user->id,
             'nom' => $data['nom'],
             'prenom' => $data['prenom'] ?? '',
             'cin' => $data['cin'],
             'telephone' => $data['telephone'] ?? null,
             'genre' => $category === 'filles' ? 'Fille' : 'Garcon',
-            'filiere' => $data['filiere'] ?? '',
+            'filiere' => $data['filiere'],
             'chambre_id' => $chambreId,
             'category' => $category,
         ])->load('chambre', 'user', 'paiements');
@@ -165,13 +175,13 @@ class StagiaireController extends Controller
             'nom' => 'sometimes|string|max:255',
             'prenom' => 'sometimes|nullable|string|max:255',
             'cin' => 'sometimes|string|max:50|unique:stagiaires,cin,'.$stagiaire->id,
-            'telephone' => 'nullable|string|max:30',
+            'telephone' => 'sometimes|required|string|max:30',
             'genre' => 'sometimes|string',
             'filiere' => 'sometimes|nullable|string|max:255',
             'chambre_id' => 'nullable|exists:chambres,id',
             'chambre_numero' => 'nullable|string|exists:chambres,numero',
             'email' => 'nullable|email|unique:users,email,'.($stagiaire->user_id ?: 'NULL'),
-            'password' => 'nullable|string|min:6',
+            'password' => 'nullable|string|min:6|confirmed',
         ]);
 
         if (isset($data['genre'])) {
@@ -193,9 +203,13 @@ class StagiaireController extends Controller
             if ($chambre && $chambre->category !== $targetCategory) {
                 return response()->json(['message' => 'La chambre ne correspond pas a la categorie du stagiaire'], 422);
             }
+
+            if ($chambre && (int) $stagiaire->chambre_id !== (int) $chambre->id && $chambre->stagiaires()->count() >= $chambre->capacite) {
+                return response()->json(['message' => 'La chambre a atteint sa capacite maximale'], 422);
+            }
         }
 
-        unset($data['email'], $data['password'], $data['chambre_numero']);
+        unset($data['email'], $data['password'], $data['password_confirmation'], $data['chambre_numero']);
         $stagiaire->update($data);
 
         if ($stagiaire->user && ($request->filled('email') || $request->filled('password'))) {

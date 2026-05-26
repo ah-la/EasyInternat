@@ -1,7 +1,7 @@
 import Card from './ui/Card.jsx'
 import Badge from './ui/Badge.jsx'
 
-export default function StatCard({ label, value, icon: Icon, hint, trend = '+12% ce mois', tone = 'info' }) {
+export default function StatCard({ label, value, icon: Icon, hint, trend = '', tone = 'info' }) {
   return (
     <Card hover className="group relative overflow-hidden rounded-3xl border-sky-100 bg-gradient-to-br from-white via-white to-cyan-soft/70 p-6 shadow-[0_20px_50px_rgba(14,165,233,0.10)]">
       <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-secondary/10 blur-2xl transition group-hover:bg-secondary/20" />
