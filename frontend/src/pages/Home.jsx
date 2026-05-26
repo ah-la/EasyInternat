@@ -23,6 +23,7 @@ import { getCurrentRole, getHomePath, isAuthenticated } from '../lib/authRole.js
 const requestSchema = z.object({
   nom: z.string().min(2, 'Nom obligatoire'),
   cin: z.string().min(5, 'CIN obligatoire'),
+  numero_inscription: z.string().min(2, "Numéro d'inscription CMC obligatoire"),
   email: z.string().email('Email invalide'),
   telephone: z.string().min(8, 'Telephone obligatoire'),
   filiere: z.string().min(2, 'Filiere obligatoire'),
@@ -33,7 +34,7 @@ const requestSchema = z.object({
       const file = files?.[0]
       return file && ['application/pdf', 'image/jpeg', 'image/png'].includes(file.type)
     }, 'Certificat PDF, JPG ou PNG seulement')
-    .refine((files) => (files?.[0]?.size || 0) <= 4 * 1024 * 1024, 'Certificat max 4 Mo')
+    .refine((files) => (files?.[0]?.size || 0) <= 2 * 1024 * 1024, 'Certificat max 2 Mo')
 })
 
 const loginSchema = z.object({
@@ -62,6 +63,7 @@ const Field = forwardRef(function Field({ icon: Icon, label, error, as = 'input'
 function AuthPanel() {
   const [activeTab, setActiveTab] = useState('request')
   const [certificatName, setCertificatName] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
   const isRequest = activeTab === 'request'
   const {
@@ -74,10 +76,11 @@ function AuthPanel() {
     defaultValues: {
       nom: '',
       cin: '',
+      numero_inscription: '',
       email: '',
       telephone: '',
       filiere: '',
-      genre: '',
+      genre: 'Fille',
       annee: '1ere annee',
       certificat: null,
       password: ''
@@ -102,10 +105,12 @@ function AuthPanel() {
     }
 
     if (isRequest) {
+      setSubmitting(true)
       try {
         const formData = new FormData()
         formData.append('nom', values.nom)
         formData.append('cin', values.cin)
+        formData.append('numero_inscription', values.numero_inscription)
         formData.append('email', values.email)
         formData.append('telephone', values.telephone)
         formData.append('filiere', values.filiere)
@@ -113,21 +118,26 @@ function AuthPanel() {
         if (values.certificat?.[0]) formData.append('certificat_residence', values.certificat[0])
 
         await api.post('/demandes', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
-        toast.success('Demande envoyee. Elle est visible dans la page Demandes.')
+        toast.success('Votre demande a été envoyée avec succès. Elle est en attente de validation.')
         setCertificatName('')
         reset()
       } catch (error) {
         toast.error(error.response?.data?.message || "La demande n'a pas pu etre envoyee.")
+      } finally {
+        setSubmitting(false)
       }
       return
     }
 
+    setSubmitting(true)
     try {
       const session = await loginUser(values)
       toast.success('Connexion reussie.')
       navigate(destinationForRole(session.role), { replace: true })
     } catch {
       toast.error('Identifiants incorrects.')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -167,6 +177,13 @@ function AuthPanel() {
                     <Field icon={UserRound} label="Nom complet" placeholder="Votre nom" {...register('nom')} error={errors.nom} />
                     <Field icon={FileText} label="CIN" placeholder="A8123456" {...register('cin')} error={errors.cin} />
                   </div>
+                  <Field
+                    icon={FileText}
+                    label="Numero d'inscription CMC"
+                    placeholder="CMC-D-001"
+                    {...register('numero_inscription')}
+                    error={errors.numero_inscription}
+                  />
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Field icon={Mail} label="Email" type="email" placeholder="votre@email.com" {...register('email')} error={errors.email} />
                     <Field icon={Phone} label="Telephone" placeholder="06XXXXXXXX" {...register('telephone')} error={errors.telephone} />
@@ -174,7 +191,6 @@ function AuthPanel() {
                   <Field icon={GraduationCap} label="Filiere" placeholder="Developpement Digital" {...register('filiere')} error={errors.filiere} />
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Field icon={UserRound} label="Genre" as="select" {...register('genre')} error={errors.genre}>
-                      <option value="" disabled>Selectionner le genre</option>
                       <option value="Fille">Fille</option>
                       <option value="Garcon">Garcon</option>
                     </Field>
@@ -207,18 +223,18 @@ function AuthPanel() {
                     </span>
                     {errors.certificat && <span className="mt-1 block text-xs font-semibold text-danger">{errors.certificat.message}</span>}
                   </label>
-                  <Button type="submit" className="landing-submit">
+                  <Button type="submit" className="landing-submit" disabled={submitting}>
                     <Send className="h-4 w-4" />
-                    Soumettre la demande
+                    {submitting ? 'Envoi en cours...' : 'Soumettre la demande'}
                   </Button>
                 </>
               ) : (
                 <>
                   <Field icon={Mail} label="Email" type="email" placeholder="admin@cmc.test" {...register('email')} error={errors.email} />
                   <Field icon={LockKeyhole} label="Mot de passe" type="password" placeholder="Mot de passe" {...register('password')} error={errors.password} />
-                  <Button type="submit" className="landing-submit">
+                  <Button type="submit" className="landing-submit" disabled={submitting}>
                     <LockKeyhole className="h-4 w-4" />
-                    Se connecter
+                    {submitting ? 'Connexion...' : 'Se connecter'}
                   </Button>
                 </>
               )}

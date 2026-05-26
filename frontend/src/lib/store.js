@@ -32,6 +32,14 @@ export function statusToApi(value = '') {
   return 'en_attente'
 }
 
+export function demandeStatusLabel(value = '') {
+  const normalized = String(value).toLowerCase()
+  if (normalized === 'acceptee' || normalized.includes('accept')) return 'Acceptée'
+  if (normalized === 'refusee' || normalized.includes('refus')) return 'Refusée'
+  if (normalized === 'liste_attente' || normalized.includes('liste')) return 'Liste attente'
+  return 'En attente'
+}
+
 const mapStagiaire = (row = {}) => ({
   ...row,
   id: String(row.id),
@@ -63,6 +71,11 @@ const mapDemande = (row = {}) => ({
   ...row,
   id: String(row.id),
   nom: fullName(row),
+  statut_api: row.statut || 'en_attente',
+  statut: demandeStatusLabel(row.statut),
+  date: row.created_at ? String(row.created_at).slice(0, 10) : '',
+  verification: row.numero_inscription ? 'Vérifié CMC' : 'Non vérifié',
+  isVerified: Boolean(row.numero_inscription),
   certificat: row.certificat_residence || row.certificat || '',
   certificat_url: row.certificat_residence ? `/demandes/${row.id}/certificat` : ''
 })
@@ -150,7 +163,7 @@ export const store = {
   deleteResponsable: (id) => api.delete(`/responsables/${id}`),
 
   getDemandes: (params) => list('/demandes', mapDemande, params),
-  acceptDemande: (id) => api.post(`/demandes/${id}/accept`),
+  acceptDemande: (id, payload = {}) => api.post(`/demandes/${id}/accept`, payload),
   refuseDemande: (id, motif_refus = '') => api.post(`/demandes/${id}/refuse`, { motif_refus }),
   updateDemande: (id, payload) => api.put(`/demandes/${id}`, payload),
 

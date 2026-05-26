@@ -56,11 +56,18 @@ class DemandeController extends Controller
 
     public function verifyCandidat(Request $request)
     {
-        $request->validate(['cin' => 'required|string']);
+        $data = $request->validate([
+            'cin' => 'required|string',
+            'numero_inscription' => 'nullable|string',
+        ]);
 
-        $found = StagiaireCentre::where('cin', $request->cin)
-            ->orWhere('numero_inscription', $request->cin)
-            ->first();
+        $query = StagiaireCentre::where('cin', $data['cin']);
+
+        if (!empty($data['numero_inscription'])) {
+            $query->where('numero_inscription', $data['numero_inscription']);
+        }
+
+        $found = $query->first();
 
         return response()->json(['exists' => (bool) $found, 'candidat' => $found]);
     }
@@ -71,29 +78,35 @@ class DemandeController extends Controller
             'nom' => 'required|string|max:255',
             'prenom' => 'nullable|string|max:255',
             'cin' => 'required|string|max:50',
-            'numero_inscription' => 'nullable|string|max:100',
+            'numero_inscription' => 'required|string|max:100',
             'email' => 'required|email|max:255',
             'telephone' => 'required|string|max:30',
             'genre' => 'required|string',
             'filiere' => 'required|string|max:255',
-            'certificat_residence' => 'required|file|mimes:pdf,jpg,jpeg,png|max:4096',
+            'certificat_residence' => 'required|file|mimes:pdf,jpg,jpeg,png|max:2048',
         ]);
 
         $candidat = StagiaireCentre::where('cin', $data['cin'])
-            ->orWhere('numero_inscription', $data['numero_inscription'] ?? '---')
+            ->where('numero_inscription', $data['numero_inscription'])
             ->first();
 
         if (!$candidat) {
-            return response()->json(['message' => 'Candidat non inscrit au centre'], 403);
+            return response()->json(['message' => 'Candidat non trouvé au centre'], 403);
         }
 
-        if (Demande::where('cin', $data['cin'])->whereIn('statut', ['en_attente', 'liste_attente'])->exists()) {
-            return response()->json(['message' => 'Une demande existe deja pour ce CIN'], 422);
+        if (Demande::where('cin', $data['cin'])->exists()) {
+            return response()->json(['message' => 'Vous avez déjà envoyé une demande.'], 422);
         }
 
         if ($request->hasFile('certificat_residence')) {
             Storage::disk('public')->makeDirectory('certificats');
-            $data['certificat_residence'] = $request->file('certificat_residence')->store('certificats', 'public');
+            $file = $request->file('certificat_residence');
+            $extension = $file->getClientOriginalExtension() ?: 'bin';
+            $path = 'certificats/'.Str::uuid().'.'.$extension;
+            $content = $file->getContent();
+            Storage::disk('public')->put($path, $content);
+
+            $data['certificat_residence'] = $path;
         }
 
         $data['nom'] = $candidat->nom ?: $data['nom'];
@@ -116,18 +129,21 @@ class DemandeController extends Controller
     {
         $this->ensureVisible($request, $demande);
 
-        if (!$demande->certificat_residence || !Storage::disk('public')->exists($demande->certificat_residence)) {
+        if (!$demande->certificat_residence) {
             abort(404, 'Certificat introuvable');
         }
 
-        $path = Storage::disk('public')->path($demande->certificat_residence);
-        $mime = Storage::disk('public')->mimeType($demande->certificat_residence) ?: 'application/octet-stream';
+        if (Storage::disk('public')->exists($demande->certificat_residence)) {
+            $mime = Storage::disk('public')->mimeType($demande->certificat_residence) ?: 'application/octet-stream';
 
-        return response()->file($path, [
-            'Content-Type' => $mime,
-            'Content-Disposition' => 'inline; filename="certificat-residence-'.$demande->cin.'"',
-            'X-Content-Type-Options' => 'nosniff',
-        ]);
+            return Storage::disk('public')->response($demande->certificat_residence, 'certificat-residence-'.$demande->cin, [
+                'Content-Type' => $mime,
+                'Content-Disposition' => 'inline; filename="certificat-residence-'.$demande->cin.'"',
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        }
+
+        abort(404, 'Certificat introuvable');
     }
 
     public function update(Request $request, Demande $demande)
@@ -171,16 +187,39 @@ class DemandeController extends Controller
     {
         $this->ensureVisible($request, $demande);
 
-        $password = Str::password(8);
-        $category = $this->categoryFromGenre($demande->genre);
-        $chambreId = Chambre::query()
-            ->where('category', $category)
-            ->withCount('stagiaires')
-            ->get()
-            ->first(fn (Chambre $chambre) => $chambre->stagiaires_count < $chambre->capacite)
-            ?->id;
+        $data = $request->validate([
+            'chambre_id' => 'nullable|exists:chambres,id',
+            'password' => 'nullable|string|min:6|confirmed',
+        ]);
 
-        if (!$chambreId) {
+        $password = $data['password'] ?? Str::password(8);
+        $category = $this->categoryFromGenre($demande->genre);
+        $chambre = null;
+
+        if (!empty($data['chambre_id'])) {
+            $chambre = Chambre::query()
+                ->where('category', $category)
+                ->withCount('stagiaires')
+                ->find($data['chambre_id']);
+
+            if (!$chambre) {
+                return response()->json(['message' => 'Chambre invalide pour cette categorie'], 422);
+            }
+
+            if ($chambre->stagiaires_count >= $chambre->capacite) {
+                return response()->json(['message' => 'Cette chambre est complete'], 422);
+            }
+        }
+
+        if (!$chambre) {
+            $chambre = Chambre::query()
+                ->where('category', $category)
+                ->withCount('stagiaires')
+                ->get()
+                ->first(fn (Chambre $room) => $room->stagiaires_count < $room->capacite);
+        }
+
+        if (!$chambre) {
             return response()->json(['message' => 'Aucune chambre disponible pour cette categorie'], 422);
         }
 
@@ -203,13 +242,13 @@ class DemandeController extends Controller
                 'telephone' => $demande->telephone,
                 'genre' => $this->genreFromCategory($category),
                 'filiere' => $demande->filiere,
-                'chambre_id' => $chambreId,
+                'chambre_id' => $chambre->id,
                 'category' => $category,
             ]
         );
 
         if (!$stagiaire->chambre_id) {
-            $stagiaire->update(['chambre_id' => $chambreId]);
+            $stagiaire->update(['chambre_id' => $chambre->id]);
         }
 
         $demande->update(['statut' => 'acceptee']);

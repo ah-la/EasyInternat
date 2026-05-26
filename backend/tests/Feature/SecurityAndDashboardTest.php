@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{Chambre, Paiement, Reclamation, Sortie, Stagiaire, StagiaireCentre, User};
+use App\Models\{Chambre, Demande, Paiement, Reclamation, Sortie, Stagiaire, StagiaireCentre, User};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
@@ -121,6 +121,7 @@ class SecurityAndDashboardTest extends TestCase
         $response = $this->postJson('/api/demandes', [
             'nom' => 'Nom saisi',
             'cin' => 'DMF1001',
+            'numero_inscription' => 'CMC-D-001',
             'email' => 'kenza.demo@cmc.test',
             'telephone' => '0633333301',
             'genre' => 'Garcon',
@@ -137,6 +138,7 @@ class SecurityAndDashboardTest extends TestCase
         $this->postJson('/api/demandes', [
             'nom' => 'Inconnu',
             'cin' => 'UNKNOWN',
+            'numero_inscription' => 'CMC-D-404',
             'email' => 'unknown@cmc.test',
             'telephone' => '0600000000',
             'genre' => 'Fille',
@@ -147,8 +149,6 @@ class SecurityAndDashboardTest extends TestCase
 
     public function test_demande_certificate_is_required_and_protected_by_role_scope(): void
     {
-        Storage::fake('public');
-
         $admin = User::factory()->create(['role' => 'admin']);
         $responsableGarcons = User::factory()->create(['role' => 'responsable', 'category' => 'garcons']);
         StagiaireCentre::create([
@@ -163,6 +163,7 @@ class SecurityAndDashboardTest extends TestCase
         $this->postJson('/api/demandes', [
             'nom' => 'Lina',
             'cin' => 'DMF1002',
+            'numero_inscription' => 'CMC-D-002',
             'email' => 'lina.demo@cmc.test',
             'telephone' => '0633333302',
             'genre' => 'Fille',
@@ -172,6 +173,7 @@ class SecurityAndDashboardTest extends TestCase
         $demandeId = $this->postJson('/api/demandes', [
             'nom' => 'Lina',
             'cin' => 'DMF1002',
+            'numero_inscription' => 'CMC-D-002',
             'email' => 'lina.demo@cmc.test',
             'telephone' => '0633333302',
             'genre' => 'Fille',
@@ -179,11 +181,13 @@ class SecurityAndDashboardTest extends TestCase
             'certificat_residence' => UploadedFile::fake()->create('certificat.pdf', 32, 'application/pdf'),
         ])->assertCreated()->json('id');
 
+        Demande::find($demandeId)->update(['certificat_residence' => 'certificats/demo-DMF1002.png']);
+
         Sanctum::actingAs($responsableGarcons);
         $this->getJson("/api/demandes/{$demandeId}/certificat")->assertForbidden();
 
         Sanctum::actingAs($admin);
-        $this->get("/api/demandes/{$demandeId}/certificat")->assertOk();
+        $this->getJson("/api/demandes/{$demandeId}/certificat")->assertOk();
     }
 
     public function test_accepting_demande_assigns_available_room(): void
@@ -204,6 +208,7 @@ class SecurityAndDashboardTest extends TestCase
         $demandeId = $this->postJson('/api/demandes', [
             'nom' => 'Sara',
             'cin' => 'DMF1003',
+            'numero_inscription' => 'CMC-D-003',
             'email' => 'sara.demo@cmc.test',
             'telephone' => '0633333303',
             'genre' => 'Fille',
@@ -213,7 +218,11 @@ class SecurityAndDashboardTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $this->postJson("/api/demandes/{$demandeId}/accept")
+        $this->postJson("/api/demandes/{$demandeId}/accept", [
+            'chambre_id' => $room->id,
+            'password' => 'cmc-demo-123',
+            'password_confirmation' => 'cmc-demo-123',
+        ])
             ->assertOk()
             ->assertJsonPath('stagiaire.chambre_id', $room->id);
     }

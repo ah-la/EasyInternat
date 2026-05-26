@@ -9,7 +9,7 @@ const toneMap = {
 }
 
 export function statusTone(value = '') {
-  const normalized = value.toString().toLowerCase()
+  const normalized = value.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
   if (['paye', 'presente', 'present', 'validee', 'actif', 'acceptee', 'disponible'].some((word) => normalized.includes(word))) {
     return 'success'
