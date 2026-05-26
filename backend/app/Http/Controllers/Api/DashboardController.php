@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Chambre, Demande, Paiement, Presence, Reclamation, Sortie, Stagiaire};
+use App\Models\{Chambre, Demande, Paiement, Reclamation, Sortie, Stagiaire};
 use App\Services\PaymentStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -22,7 +22,6 @@ class DashboardController extends Controller
         $chambres = Chambre::query()->when($category, fn ($q) => $q->where('category', $category));
         $demandes = Demande::query()->when($category, fn ($q) => $q->where('genre', $category === 'filles' ? 'Fille' : 'Garcon'));
         $paiements = Paiement::query()->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)));
-        $presences = Presence::query()->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)));
         $reclamations = Reclamation::query()->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)));
         $sorties = Sortie::query()->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)));
         $paymentStagiaires = (clone $stagiaires)->with('paiements')->get();
@@ -37,27 +36,24 @@ class DashboardController extends Controller
             'chambres_disponibles' => (clone $chambres)->where('statut', 'disponible')->count(),
             'demandes_en_attente' => (clone $demandes)->where('statut', 'en_attente')->count(),
             'paiements_retard' => $latePayments,
-            'presences_jour' => (clone $presences)->whereDate('date', today())->count(),
             'reclamations_ouvertes' => (clone $reclamations)->whereIn('statut', ['en_attente', 'en_cours'])->count(),
             'sorties_en_attente' => (clone $sorties)->where('statut', 'en_attente')->count(),
             'notifications' => $this->notifications(
                 demandes: clone $demandes,
                 reclamations: clone $reclamations,
                 paiements: clone $paiements,
-                presences: clone $presences,
                 sorties: clone $sorties,
                 latePayments: $latePayments
             ),
         ]);
     }
 
-    private function notifications($demandes, $reclamations, $paiements, $presences, $sorties, int $latePayments): Collection
+    private function notifications($demandes, $reclamations, $paiements, $sorties, int $latePayments): Collection
     {
         $today = today();
 
         $newDemandes = (clone $demandes)->where('statut', 'en_attente')->whereDate('created_at', $today)->count();
         $openReclamations = (clone $reclamations)->whereIn('statut', ['en_attente', 'en_cours'])->count();
-        $absencesToday = (clone $presences)->whereDate('date', $today)->where('statut', 'absent')->count();
         $pendingSorties = (clone $sorties)->where('statut', 'en_attente')->count();
 
         return collect([
@@ -86,20 +82,12 @@ class DashboardController extends Controller
                 'target' => 'stagiaires',
             ],
             [
-                'type' => 'absence',
-                'title' => 'Absences du jour',
-                'message' => $absencesToday > 0 ? "$absencesToday absence(s) signalee(s) aujourd hui" : 'Aucune absence signalee aujourd hui',
-                'count' => $absencesToday,
-                'tone' => $absencesToday > 0 ? 'danger' : 'success',
-                'target' => 'presences',
-            ],
-            [
                 'type' => 'sortie',
                 'title' => 'Sorties en attente',
                 'message' => $pendingSorties > 0 ? "$pendingSorties sortie(s) attendent une decision" : 'Aucune sortie en attente',
                 'count' => $pendingSorties,
                 'tone' => $pendingSorties > 0 ? 'warning' : 'success',
-                'target' => 'presences',
+                'target' => 'sorties',
             ],
         ]);
     }

@@ -32,7 +32,7 @@ export default function StagiaireReclamation() {
   return (
     <div className="app-shell min-h-screen bg-bg p-6 text-text">
       <div className="mx-auto mb-4 flex w-full max-w-xl flex-wrap justify-end gap-2">
-        <Button as={Link} to="/stagiaire/presence" variant="secondary">
+        <Button as={Link} to="/stagiaire/sortie" variant="secondary">
           <CalendarClock className="h-4 w-4" />
           Declarer une sortie
         </Button>

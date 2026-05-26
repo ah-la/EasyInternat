@@ -14,7 +14,7 @@ const emptyForm = {
   contact: ''
 }
 
-export default function StagiairePresence() {
+export default function StagiaireSortie() {
   const [form, setForm] = useState(emptyForm)
   const navigate = useNavigate()
 

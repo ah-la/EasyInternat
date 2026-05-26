@@ -12,12 +12,12 @@ import Chambres from './pages/Chambres.jsx'
 import ChambreForm from './pages/ChambreForm.jsx'
 import Paiements from './pages/Paiements.jsx'
 import PaiementForm from './pages/PaiementForm.jsx'
-import Presences from './pages/Presences.jsx'
+import Sorties from './pages/Sorties.jsx'
 import Reclamations from './pages/Reclamations.jsx'
 import Responsables from './pages/Responsables.jsx'
 import ResponsableForm from './pages/ResponsableForm.jsx'
 import Demandes from './pages/Demandes.jsx'
-import StagiairePresence from './pages/StagiairePresence.jsx'
+import StagiaireSortie from './pages/StagiaireSortie.jsx'
 import StagiaireReclamation from './pages/StagiaireReclamation.jsx'
 
 export default function App() {
@@ -43,7 +43,7 @@ export default function App() {
             <Route path="chambres/:numero/edit" element={<ChambreForm />} />
             <Route path="paiements" element={<Paiements />} />
             <Route path="paiements/new" element={<PaiementForm />} />
-            <Route path="presences" element={<Presences />} />
+            <Route path="sorties" element={<Sorties />} />
             <Route path="reclamations" element={<Reclamations />} />
             <Route path="responsables" element={<Responsables />} />
             <Route path="responsables/new" element={<ResponsableForm />} />
@@ -64,13 +64,13 @@ export default function App() {
             <Route path="chambres/:numero/edit" element={<ChambreForm />} />
             <Route path="paiements" element={<Paiements />} />
             <Route path="paiements/new" element={<PaiementForm />} />
-            <Route path="presences" element={<Presences />} />
+            <Route path="sorties" element={<Sorties />} />
             <Route path="reclamations" element={<Reclamations />} />
           </Route>
         </Route>
 
         <Route element={<RequireAuth allowedRoles={['stagiaire']} />}>
-          <Route path="/stagiaire/presence" element={<StagiairePresence />} />
+          <Route path="/stagiaire/sortie" element={<StagiaireSortie />} />
           <Route path="/stagiaire/reclamation" element={<StagiaireReclamation />} />
         </Route>
 

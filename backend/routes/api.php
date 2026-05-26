@@ -8,7 +8,6 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\StagiaireController;
 use App\Http\Controllers\Api\ChambreController;
 use App\Http\Controllers\Api\PaiementController;
-use App\Http\Controllers\Api\PresenceController;
 use App\Http\Controllers\Api\ReclamationController;
 use App\Http\Controllers\Api\PdfController;
 use App\Http\Controllers\Api\SortieController;
@@ -24,13 +23,13 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('role:admin,responsable')->group(function () {
         Route::apiResource('/demandes', DemandeController::class)->except(['store']);
+        Route::get('/demandes/{demande}/certificat', [DemandeController::class, 'certificat']);
         Route::post('/demandes/{demande}/accept', [DemandeController::class, 'accept']);
         Route::post('/demandes/{demande}/refuse', [DemandeController::class, 'refuse']);
         Route::get('/stagiaires/{stagiaire}/profile', [StagiaireController::class, 'profile']);
         Route::apiResource('/stagiaires', StagiaireController::class);
         Route::apiResource('/chambres', ChambreController::class);
         Route::apiResource('/paiements', PaiementController::class);
-        Route::get('/presences', [PresenceController::class, 'index']);
         Route::apiResource('/sorties', SortieController::class)->except(['show', 'store']);
         Route::apiResource('/reclamations', ReclamationController::class)->except(['store']);
         Route::get('/pdf/{type}', [PdfController::class, 'export']);
@@ -42,7 +41,6 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:stagiaire')->group(function () {
-        Route::post('/presences/mark', [PresenceController::class, 'mark']);
         Route::post('/sorties', [SortieController::class, 'store']);
         Route::post('/reclamations', [ReclamationController::class, 'store']);
     });

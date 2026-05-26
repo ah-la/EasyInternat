@@ -36,7 +36,7 @@ export function isAuthenticated() {
 export function getHomePath(role = getCurrentRole()) {
   if (role === 'admin') return '/admin'
   if (role === 'responsable_filles' || role === 'responsable_garcons') return '/responsable'
-  if (role === 'stagiaire') return '/stagiaire/presence'
+  if (role === 'stagiaire') return '/stagiaire/sortie'
   return '/'
 }
 

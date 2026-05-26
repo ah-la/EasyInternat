@@ -26,7 +26,6 @@ const notificationIcons = {
   demande: FileCheck2,
   reclamation: MessageSquareWarning,
   paiement: CreditCard,
-  absence: AlertTriangle,
   sortie: Bell
 }
 
@@ -157,7 +156,7 @@ export default function Dashboard() {
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-primary">Activite mensuelle</h2>
-              <p className="text-sm text-muted">Sorties, absences et paiements</p>
+              <p className="text-sm text-muted">Sorties et paiements</p>
             </div>
             <Badge tone="info">Mis a jour {format(new Date(), 'dd/MM/yyyy')}</Badge>
           </div>
@@ -169,7 +168,6 @@ export default function Dashboard() {
                 <YAxis stroke="#64748B" tickLine={false} axisLine={false} />
                 <Tooltip cursor={{ fill: '#EAF8FF' }} contentStyle={{ borderColor: '#CDEEFF', borderRadius: 8 }} />
                 <Bar dataKey="sorties" name="Sorties" fill="#0EA5E9" radius={[10, 10, 0, 0]} animationDuration={900} />
-                <Bar dataKey="absences" name="Absences" fill="#F59E0B" radius={[10, 10, 0, 0]} animationDuration={900} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -201,7 +199,7 @@ export default function Dashboard() {
         <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-xl font-black text-primary">Notifications</h2>
-            <p className="text-sm font-semibold text-muted">Demandes, reclamations, paiements et absences a suivre</p>
+            <p className="text-sm font-semibold text-muted">Demandes, reclamations, paiements et sorties a suivre</p>
           </div>
           <Badge tone="info">{notifications.length} alertes</Badge>
         </div>

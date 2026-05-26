@@ -23,7 +23,7 @@ function pageTitle(pathname, role) {
   if (clean.startsWith('/admin/paiements/new')) return 'Ajouter paiement'
   if (clean.startsWith('/admin/paiements')) return 'Paiements'
   if (clean.startsWith('/admin/demandes')) return 'Demandes'
-  if (clean.startsWith('/admin/presences')) return 'Sorties'
+  if (clean.startsWith('/admin/sorties')) return 'Sorties'
   if (clean.startsWith('/admin/reclamations')) return 'Reclamations'
   return 'Dashboard'
 }

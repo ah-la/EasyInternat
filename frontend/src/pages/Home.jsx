@@ -27,7 +27,13 @@ const requestSchema = z.object({
   telephone: z.string().min(8, 'Telephone obligatoire'),
   filiere: z.string().min(2, 'Filiere obligatoire'),
   genre: z.string().min(1, 'Genre obligatoire'),
-  certificat: z.any().refine((files) => files?.length > 0, 'Certificat de residence obligatoire')
+  certificat: z.any()
+    .refine((files) => files?.length > 0, 'Certificat de residence obligatoire')
+    .refine((files) => {
+      const file = files?.[0]
+      return file && ['application/pdf', 'image/jpeg', 'image/png'].includes(file.type)
+    }, 'Certificat PDF, JPG ou PNG seulement')
+    .refine((files) => (files?.[0]?.size || 0) <= 4 * 1024 * 1024, 'Certificat max 4 Mo')
 })
 
 const loginSchema = z.object({

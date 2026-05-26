@@ -2,8 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\{Chambre, Demande, Paiement, Presence, Reclamation, Stagiaire, StagiaireCentre, User};
+use App\Models\{Chambre, Demande, Paiement, Reclamation, Stagiaire, StagiaireCentre, User};
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class DemoStagiairesSeeder extends Seeder
 {
@@ -116,22 +117,6 @@ class DemoStagiairesSeeder extends Seeder
             );
         }
 
-        for ($day = 0; $day < 3; $day++) {
-            $date = today()->subDays($day);
-            $attributes = Presence::factory()
-                ->make([
-                    'stagiaire_id' => $stagiaire->id,
-                    'date' => $date,
-                    'statut' => ($index + $day) % 4 === 0 ? 'absent' : 'present',
-                ])
-                ->getAttributes();
-
-            Presence::updateOrCreate(
-                ['stagiaire_id' => $stagiaire->id, 'date' => $date],
-                $attributes
-            );
-        }
-
         $attributes = Reclamation::factory()
             ->make([
                 'stagiaire_id' => $stagiaire->id,
@@ -159,6 +144,8 @@ class DemoStagiairesSeeder extends Seeder
         ];
 
         foreach ($demandes as [$nom, $prenom, $cin, $numero, $email, $telephone, $genre, $filiere]) {
+            $certificatePath = $this->demoCertificatePath($cin);
+
             StagiaireCentre::updateOrCreate(
                 ['cin' => $cin],
                 [
@@ -180,11 +167,24 @@ class DemoStagiairesSeeder extends Seeder
                     'telephone' => $telephone,
                     'genre' => $genre,
                     'filiere' => $filiere,
+                    'certificat_residence' => $certificatePath,
                     'statut' => 'en_attente',
                 ])
                 ->getAttributes();
 
             Demande::updateOrCreate(['cin' => $cin], $attributes);
         }
+    }
+
+    private function demoCertificatePath(string $cin): string
+    {
+        $path = 'certificats/demo-'.$cin.'.png';
+
+        if (!Storage::disk('public')->exists($path)) {
+            $png = 'iVBORw0KGgoAAAANSUhEUgAAASwAAABkCAYAAABkW7XSAAAAAXNSR0IArs4c6QAAAjVJREFUeF7t1sENgCAMRFF8sH8n7QpHcAlmQIR+QtLcN1m+o5wzAAAAAAAAAAAAAAAAAAAAAADwWV2qCwAAwI8CBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIPgBQAAAAAAAAAAAAAAAAAAAAAAAMBf9gGdNQKmtX+L5QAAAABJRU5ErkJggg==';
+            Storage::disk('public')->put($path, base64_decode($png));
+        }
+
+        return $path;
     }
 }

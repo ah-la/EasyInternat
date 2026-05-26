@@ -11,7 +11,7 @@ class ReclamationFactory extends Factory
 {
     public function definition(): array
     {
-        $type = fake()->randomElement(['Chambre', 'Paiement', 'Presence', 'Maintenance']);
+        $type = fake()->randomElement(['Chambre', 'Paiement', 'Sortie', 'Maintenance']);
 
         return [
             'type' => $type,

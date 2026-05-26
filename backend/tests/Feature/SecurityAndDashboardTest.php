@@ -2,9 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\{Chambre, Paiement, Presence, Reclamation, Sortie, Stagiaire, StagiaireCentre, User};
+use App\Models\{Chambre, Paiement, Reclamation, Sortie, Stagiaire, StagiaireCentre, User};
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -80,7 +82,6 @@ class SecurityAndDashboardTest extends TestCase
         $stagiaire = Stagiaire::factory()->filles()->create(['chambre_id' => $room->id]);
 
         Paiement::factory()->create(['stagiaire_id' => $stagiaire->id, 'statut' => 'en_retard']);
-        Presence::factory()->create(['stagiaire_id' => $stagiaire->id, 'date' => today(), 'statut' => 'absent']);
         Reclamation::factory()->create(['stagiaire_id' => $stagiaire->id, 'statut' => 'en_attente']);
         Sortie::create([
             'stagiaire_id' => $stagiaire->id,
@@ -106,6 +107,8 @@ class SecurityAndDashboardTest extends TestCase
 
     public function test_public_demande_requires_center_candidate_and_uses_center_data(): void
     {
+        Storage::fake('public');
+
         StagiaireCentre::create([
             'nom' => 'Kenza',
             'prenom' => 'Mansouri',
@@ -122,6 +125,7 @@ class SecurityAndDashboardTest extends TestCase
             'telephone' => '0633333301',
             'genre' => 'Garcon',
             'filiere' => 'Autre filiere',
+            'certificat_residence' => UploadedFile::fake()->create('certificat.pdf', 32, 'application/pdf'),
         ]);
 
         $response->assertCreated()
@@ -137,7 +141,49 @@ class SecurityAndDashboardTest extends TestCase
             'telephone' => '0600000000',
             'genre' => 'Fille',
             'filiere' => 'Developpement Digital',
+            'certificat_residence' => UploadedFile::fake()->create('certificat.pdf', 32, 'application/pdf'),
         ])->assertForbidden();
+    }
+
+    public function test_demande_certificate_is_required_and_protected_by_role_scope(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $responsableGarcons = User::factory()->create(['role' => 'responsable', 'category' => 'garcons']);
+        StagiaireCentre::create([
+            'nom' => 'Lina',
+            'prenom' => 'Tazi',
+            'cin' => 'DMF1002',
+            'numero_inscription' => 'CMC-D-002',
+            'filiere' => 'Infrastructure Digitale',
+            'genre' => 'Fille',
+        ]);
+
+        $this->postJson('/api/demandes', [
+            'nom' => 'Lina',
+            'cin' => 'DMF1002',
+            'email' => 'lina.demo@cmc.test',
+            'telephone' => '0633333302',
+            'genre' => 'Fille',
+            'filiere' => 'Infrastructure Digitale',
+        ])->assertUnprocessable();
+
+        $demandeId = $this->postJson('/api/demandes', [
+            'nom' => 'Lina',
+            'cin' => 'DMF1002',
+            'email' => 'lina.demo@cmc.test',
+            'telephone' => '0633333302',
+            'genre' => 'Fille',
+            'filiere' => 'Infrastructure Digitale',
+            'certificat_residence' => UploadedFile::fake()->create('certificat.pdf', 32, 'application/pdf'),
+        ])->assertCreated()->json('id');
+
+        Sanctum::actingAs($responsableGarcons);
+        $this->getJson("/api/demandes/{$demandeId}/certificat")->assertForbidden();
+
+        Sanctum::actingAs($admin);
+        $this->get("/api/demandes/{$demandeId}/certificat")->assertOk();
     }
 
     public function test_paiement_creation_accepts_only_real_paid_records(): void

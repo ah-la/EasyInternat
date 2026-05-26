@@ -23,3 +23,8 @@ api.interceptors.response.use(
 )
 
 export default api
+
+export function apiUrl(path) {
+  const base = import.meta.env.VITE_API_URL || '/api'
+  return `${base}${path}`
+}

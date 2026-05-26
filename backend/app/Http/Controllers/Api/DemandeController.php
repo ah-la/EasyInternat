@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\{ActionHistory, Demande, StagiaireCentre, Stagiaire, User};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class DemandeController extends Controller
@@ -75,7 +76,7 @@ class DemandeController extends Controller
             'telephone' => 'required|string|max:30',
             'genre' => 'required|string',
             'filiere' => 'required|string|max:255',
-            'certificat_residence' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
+            'certificat_residence' => 'required|file|mimes:pdf,jpg,jpeg,png|max:4096',
         ]);
 
         $candidat = StagiaireCentre::where('cin', $data['cin'])
@@ -91,6 +92,7 @@ class DemandeController extends Controller
         }
 
         if ($request->hasFile('certificat_residence')) {
+            Storage::disk('public')->makeDirectory('certificats');
             $data['certificat_residence'] = $request->file('certificat_residence')->store('certificats', 'public');
         }
 
@@ -108,6 +110,24 @@ class DemandeController extends Controller
     {
         $this->ensureVisible($request, $demande);
         return $demande;
+    }
+
+    public function certificat(Request $request, Demande $demande)
+    {
+        $this->ensureVisible($request, $demande);
+
+        if (!$demande->certificat_residence || !Storage::disk('public')->exists($demande->certificat_residence)) {
+            abort(404, 'Certificat introuvable');
+        }
+
+        $path = Storage::disk('public')->path($demande->certificat_residence);
+        $mime = Storage::disk('public')->mimeType($demande->certificat_residence) ?: 'application/octet-stream';
+
+        return response()->file($path, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="certificat-residence-'.$demande->cin.'"',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
     }
 
     public function update(Request $request, Demande $demande)

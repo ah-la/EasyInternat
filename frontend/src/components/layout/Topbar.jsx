@@ -10,7 +10,7 @@ function mobileItems(basePath, roleName) {
     { label: 'Demandes', to: `${basePath}/demandes`, icon: FileCheck2 },
     { label: 'Chambres', to: `${basePath}/chambres`, icon: BedDouble },
     { label: 'Paiements', to: `${basePath}/paiements`, icon: CreditCard },
-    { label: 'Sorties', to: `${basePath}/presences`, icon: ClipboardCheck },
+    { label: 'Sorties', to: `${basePath}/sorties`, icon: ClipboardCheck },
     { label: 'Reclamations', to: `${basePath}/reclamations`, icon: MessageSquareText },
     { label: 'Responsables', to: '/admin/responsables', icon: UsersRound, adminOnly: true }
   ].filter((item) => !item.adminOnly || roleName === 'admin')

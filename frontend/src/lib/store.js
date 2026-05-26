@@ -63,7 +63,8 @@ const mapDemande = (row = {}) => ({
   ...row,
   id: String(row.id),
   nom: fullName(row),
-  certificat: row.certificat_residence || row.certificat || ''
+  certificat: row.certificat_residence || row.certificat || '',
+  certificat_url: row.certificat_residence ? `/demandes/${row.id}/certificat` : ''
 })
 
 const mapChambre = (row = {}) => {
@@ -122,17 +123,9 @@ const mapReclamation = (row = {}) => ({
   priorite: row.priorite || 'Normale'
 })
 
-const mapPresence = (row = {}) => ({
-  ...row,
-  id: String(row.id),
-  date: row.date || '',
-  statut: row.statut || ''
-})
-
 const mapProfile = (row = {}) => ({
   ...mapStagiaire(row),
   paiements: (row.paiements || []).map(mapPaiement),
-  presences: (row.presences || []).map(mapPresence),
   reclamations: (row.reclamations || []).map(mapReclamation),
   sorties: (row.sorties || []).map(mapSortie)
 })
@@ -176,7 +169,5 @@ export const store = {
 
   getReclamations: (params) => list('/reclamations', mapReclamation, params),
   createReclamation: async (payload) => mapReclamation((await api.post('/reclamations', payload)).data),
-  updateReclamation: async (id, payload) => mapReclamation((await api.put(`/reclamations/${id}`, payload)).data),
-
-  markPresence: async () => (await api.post('/presences/mark')).data
+  updateReclamation: async (id, payload) => mapReclamation((await api.put(`/reclamations/${id}`, payload)).data)
 }

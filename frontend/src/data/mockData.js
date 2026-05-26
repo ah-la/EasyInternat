@@ -1,9 +1,9 @@
 export const monthlyStats = [
-  { month: 'Jan', sorties: 8, absences: 2, paiements: 88 },
-  { month: 'Fev', sorties: 12, absences: 3, paiements: 82 },
-  { month: 'Mar', sorties: 6, absences: 1, paiements: 91 },
-  { month: 'Avr', sorties: 10, absences: 2, paiements: 86 },
-  { month: 'Mai', sorties: 7, absences: 1, paiements: 93 }
+  { month: 'Jan', sorties: 8, paiements: 88 },
+  { month: 'Fev', sorties: 12, paiements: 82 },
+  { month: 'Mar', sorties: 6, paiements: 91 },
+  { month: 'Avr', sorties: 10, paiements: 86 },
+  { month: 'Mai', sorties: 7, paiements: 93 }
 ]
 
 export const stagiaires = [

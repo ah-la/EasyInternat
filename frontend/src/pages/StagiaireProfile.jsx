@@ -49,11 +49,6 @@ export default function StagiaireProfile() {
 
   const chambre = profile.chambreDetails || {}
 
-  const presenceColumns = [
-    { accessorKey: 'date', header: 'Date' },
-    { accessorKey: 'statut', header: 'Statut', cell: ({ getValue }) => <Badge tone={statusTone(getValue())}>{getValue()}</Badge> }
-  ]
-
   const reclamationColumns = [
     { accessorKey: 'date', header: 'Date' },
     { accessorKey: 'type', header: 'Categorie' },
@@ -105,7 +100,6 @@ export default function StagiaireProfile() {
       </Card>
 
       <DataTable title="Paiements" columns={paiementColumns} rows={profile.paiements || []} />
-      <DataTable title="Presences" columns={presenceColumns} rows={profile.presences || []} />
       <DataTable title="Reclamations" columns={reclamationColumns} rows={profile.reclamations || []} />
     </div>
   )

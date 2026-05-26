@@ -27,10 +27,6 @@ return new class extends Migration
             $table->index(['statut', 'date_paiement'], 'paiements_statut_date_idx');
         });
 
-        Schema::table('presences', function (Blueprint $table) {
-            $table->index(['date', 'statut'], 'presences_date_statut_idx');
-        });
-
         Schema::table('reclamations', function (Blueprint $table) {
             $table->index(['statut', 'type', 'created_at'], 'reclamations_statut_type_created_idx');
         });
@@ -48,10 +44,6 @@ return new class extends Migration
 
         Schema::table('reclamations', function (Blueprint $table) {
             $table->dropIndex('reclamations_statut_type_created_idx');
-        });
-
-        Schema::table('presences', function (Blueprint $table) {
-            $table->dropIndex('presences_date_statut_idx');
         });
 
         Schema::table('paiements', function (Blueprint $table) {

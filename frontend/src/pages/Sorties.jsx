@@ -5,7 +5,7 @@ import Badge, { statusTone } from '../components/ui/Badge.jsx'
 import { getCurrentRole } from '../lib/authRole.js'
 import { store } from '../lib/store.js'
 
-export default function Presences() {
+export default function Sorties() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ category: '', chambre: '', statut: '', date: '' })

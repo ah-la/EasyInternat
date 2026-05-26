@@ -33,7 +33,7 @@ function makeItems(basePath, role) {
     {
       title: 'Suivi',
       items: [
-        { label: 'Sorties', to: `${basePath}/presences`, icon: ClipboardCheck },
+        { label: 'Sorties', to: `${basePath}/sorties`, icon: ClipboardCheck },
         { label: 'Reclamations', to: `${basePath}/reclamations`, icon: MessageSquareText }
       ]
     }

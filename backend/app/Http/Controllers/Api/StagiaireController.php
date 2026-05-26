@@ -150,7 +150,6 @@ class StagiaireController extends Controller
             'user',
             'chambre',
             'paiements' => fn ($q) => $q->latest(),
-            'presences' => fn ($q) => $q->latest(),
             'reclamations' => fn ($q) => $q->latest(),
             'sorties' => fn ($q) => $q->latest(),
         ]);

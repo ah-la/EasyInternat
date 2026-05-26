@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Chambre, Paiement, Presence, Stagiaire};
+use App\Models\{Chambre, Paiement, Stagiaire};
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -55,20 +55,6 @@ class PdfController extends Controller
                         $row->montant.' DH',
                         $row->statut,
                         $row->date_paiement ?? '-',
-                    ]),
-            ],
-            'absences' => [
-                'Liste des absences',
-                ['Stagiaire', 'Date', 'Statut', 'IP'],
-                Presence::with('stagiaire')
-                    ->where('statut', 'absent')
-                    ->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)))
-                    ->get()
-                    ->map(fn ($row) => [
-                        trim($row->stagiaire->nom.' '.$row->stagiaire->prenom),
-                        $row->date,
-                        $row->statut,
-                        $row->ip_address ?? '-',
                     ]),
             ],
             default => abort(404, 'Type PDF inconnu'),

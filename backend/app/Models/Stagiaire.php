@@ -36,11 +36,6 @@ class Stagiaire extends Model
         return $this->hasMany(Paiement::class);
     }
 
-    public function presences()
-    {
-        return $this->hasMany(Presence::class);
-    }
-
     public function reclamations()
     {
         return $this->hasMany(Reclamation::class);

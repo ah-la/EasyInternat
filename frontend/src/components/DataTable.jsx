@@ -13,7 +13,7 @@ function normalizeColumns(columns, rows) {
         column.cell ||
         (({ getValue }) => {
           const value = getValue()
-          const isStatus = ['statut', 'paiement', 'presence'].includes(column.accessorKey)
+          const isStatus = ['statut', 'paiement'].includes(column.accessorKey)
           return isStatus ? <Badge tone={statusTone(value)}>{value}</Badge> : value
         })
     }))
@@ -25,7 +25,7 @@ function normalizeColumns(columns, rows) {
     header: key.charAt(0).toUpperCase() + key.slice(1),
     cell: ({ getValue }) => {
       const value = getValue()
-      const isStatus = ['statut', 'paiement', 'presence'].includes(key)
+      const isStatus = ['statut', 'paiement'].includes(key)
       return isStatus ? <Badge tone={statusTone(value)}>{value}</Badge> : value
     }
   }))
