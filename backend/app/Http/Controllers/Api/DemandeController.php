@@ -126,6 +126,10 @@ class DemandeController extends Controller
 
         if (isset($data['genre'])) {
             $data['genre'] = $this->genreFromCategory($this->categoryFromGenre($data['genre']));
+
+            if ($request->user()?->role === 'responsable' && $data['genre'] !== $this->genreFromCategory($request->user()->category)) {
+                abort(403, 'Acces refuse pour cette categorie');
+            }
         }
 
         $demande->update($data);

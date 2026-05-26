@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
@@ -6,8 +7,10 @@ use App\Models\ActionHistory;
 use App\Models\Sortie;
 use Illuminate\Http\Request;
 
-class SortieController extends Controller {
-    private function ensureVisible(Request $request, Sortie $sortie): void {
+class SortieController extends Controller
+{
+    private function ensureVisible(Request $request, Sortie $sortie): void
+    {
         $category = $request->user()?->role === 'responsable' ? $request->user()->category : null;
 
         if ($category && $sortie->stagiaire?->category !== $category) {
@@ -15,20 +18,21 @@ class SortieController extends Controller {
         }
     }
 
-    public function index(Request $request) {
+    public function index(Request $request)
+    {
         $query = Sortie::with('stagiaire.chambre');
         $user = $request->user();
 
         if ($user && $user->role === 'responsable' && $user->category) {
-            $query->whereHas('stagiaire', fn($q) => $q->where('category', $user->category));
+            $query->whereHas('stagiaire', fn ($q) => $q->where('category', $user->category));
         }
 
         if ($user && $user->role === 'stagiaire') {
-            $query->whereHas('stagiaire', fn($q) => $q->where('user_id', $user->id));
+            $query->whereHas('stagiaire', fn ($q) => $q->where('user_id', $user->id));
         }
 
         if ($request->filled('category') && $user?->role === 'admin') {
-            $query->whereHas('stagiaire', fn($q) => $q->where('category', $request->category));
+            $query->whereHas('stagiaire', fn ($q) => $q->where('category', $request->category));
         }
 
         if ($request->filled('statut')) {
@@ -41,24 +45,22 @@ class SortieController extends Controller {
 
         if ($request->filled('chambre')) {
             $chambre = $request->chambre;
-            $query->whereHas('stagiaire.chambre', fn($q) => $q->where('numero', 'like', '%'.$chambre.'%'));
+            $query->whereHas('stagiaire.chambre', fn ($q) => $q->where('numero', 'like', '%'.$chambre.'%'));
         }
 
         return $query->latest()->paginate(20);
     }
 
-    public function store(Request $request) {
+    public function store(Request $request)
+    {
         $data = $request->validate([
-            'stagiaire_id' => 'nullable|exists:stagiaires,id',
             'date_sortie' => 'required|date',
             'date_retour' => 'required|date|after_or_equal:date_sortie',
             'contact' => 'nullable|string|max:30',
             'motif' => 'nullable|string',
         ]);
 
-        if (empty($data['stagiaire_id'])) {
-            $data['stagiaire_id'] = $request->user()->stagiaire?->id;
-        }
+        $data['stagiaire_id'] = $request->user()->stagiaire?->id;
 
         if (!$data['stagiaire_id']) {
             return response()->json(['message' => 'Compte stagiaire introuvable'], 404);
@@ -67,7 +69,8 @@ class SortieController extends Controller {
         return Sortie::create($data + ['statut' => 'en_attente'])->load('stagiaire.chambre');
     }
 
-    public function update(Request $request, Sortie $sortie) {
+    public function update(Request $request, Sortie $sortie)
+    {
         $sortie->load('stagiaire');
         $this->ensureVisible($request, $sortie);
 
@@ -92,7 +95,8 @@ class SortieController extends Controller {
         return $sortie->load('stagiaire.chambre');
     }
 
-    public function destroy(Request $request, Sortie $sortie) {
+    public function destroy(Request $request, Sortie $sortie)
+    {
         $sortie->load('stagiaire');
         $this->ensureVisible($request, $sortie);
         $sortie->delete();
