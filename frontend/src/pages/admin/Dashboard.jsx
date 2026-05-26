@@ -55,8 +55,10 @@ export default function Dashboard() {
   const [allSorties, setAllSorties] = useState([])
   const [allChambres, setAllChambres] = useState([])
   const [allPaiements, setAllPaiements] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    setLoading(true)
     Promise.all([
       store.getDashboard(),
       store.getStagiaires(),
@@ -71,7 +73,7 @@ export default function Dashboard() {
       setAllSorties(sorties)
       setAllChambres(chambres)
       setAllPaiements(paiements)
-    }).catch(() => {})
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const visibleStagiaires = filterStagiairesByRole(allStagiaires, role)
@@ -168,10 +170,10 @@ export default function Dashboard() {
       </div>
 
       <div className="grid min-w-0 gap-6 xl:grid-cols-2">
-        <DataTable title="Stagiaires recents" columns={tableColumns.stagiaires} rows={visibleStagiaires.slice(0, 4)} />
-        <DataTable title="Chambres" columns={tableColumns.chambres} rows={visibleChambres.slice(0, 4)} />
-        <DataTable title="Sorties recentes" columns={tableColumns.sorties} rows={visibleSorties.slice(0, 4)} />
-        <DataTable title="Paiements" columns={tableColumns.paiements} rows={visiblePaiements.slice(0, 4)} />
+        <DataTable title="Stagiaires recents" columns={tableColumns.stagiaires} rows={visibleStagiaires.slice(0, 4)} loading={loading} />
+        <DataTable title="Chambres" columns={tableColumns.chambres} rows={visibleChambres.slice(0, 4)} loading={loading} />
+        <DataTable title="Sorties recentes" columns={tableColumns.sorties} rows={visibleSorties.slice(0, 4)} loading={loading} />
+        <DataTable title="Paiements" columns={tableColumns.paiements} rows={visiblePaiements.slice(0, 4)} loading={loading} />
       </div>
     </motion.div>
   )

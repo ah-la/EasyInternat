@@ -7,11 +7,13 @@ import { store } from '../lib/store.js'
 
 export default function Presences() {
   const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ category: '', chambre: '', statut: '', date: '' })
   const role = getCurrentRole()
 
   useEffect(() => {
-    store.getSorties(filters).then(setRows).catch(() => setRows([]))
+    setLoading(true)
+    store.getSorties(filters).then(setRows).catch(() => setRows([])).finally(() => setLoading(false))
   }, [filters])
 
   const updateStatus = async (id, statut) => {
@@ -62,6 +64,7 @@ export default function Presences() {
       title="Sorties"
       columns={columns}
       rows={rows}
+      loading={loading}
       showHeading={false}
       filters={
         <div className="flex flex-wrap items-center gap-2">

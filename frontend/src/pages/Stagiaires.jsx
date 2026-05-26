@@ -8,13 +8,15 @@ import { store } from '../lib/store.js'
 
 export default function Stagiaires() {
   const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ search: '', category: '', chambre: '' })
   const role = getCurrentRole()
   const basePath = role === 'admin' ? '/admin' : '/responsable'
   const visibleRows = useMemo(() => filterStagiairesByRole(rows, role), [rows, role])
 
   useEffect(() => {
-    store.getStagiaires(filters).then(setRows).catch(() => setRows([]))
+    setLoading(true)
+    store.getStagiaires(filters).then(setRows).catch(() => setRows([])).finally(() => setLoading(false))
   }, [filters])
 
   const deleteRow = async (id) => {
@@ -66,6 +68,7 @@ export default function Stagiaires() {
       title="Stagiaires"
       columns={columns}
       rows={visibleRows}
+      loading={loading}
       showHeading={false}
       actions={
         <Button as={Link} to={`${basePath}/stagiaires/new`}>

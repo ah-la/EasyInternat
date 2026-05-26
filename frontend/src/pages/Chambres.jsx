@@ -30,12 +30,14 @@ export default function Chambres() {
   const [activeCategory, setActiveCategory] = useState('Tous')
   const [expanded, setExpanded] = useState(null)
   const [allRows, setAllRows] = useState([])
+  const [loading, setLoading] = useState(true)
   const role = getCurrentRole()
   const roleInfo = getRoleInfo(role)
   const basePath = role === 'admin' ? '/admin' : '/responsable'
 
   useEffect(() => {
-    store.getChambres().then(setAllRows).catch(() => setAllRows([]))
+    setLoading(true)
+    store.getChambres().then(setAllRows).catch(() => setAllRows([])).finally(() => setLoading(false))
   }, [])
 
   const resetFilters = () => {
@@ -124,6 +126,7 @@ export default function Chambres() {
       title="Chambres"
       columns={columns}
       rows={displayRows}
+      loading={loading}
       showHeading={false}
       actions={
         <Button as={Link} to={`${basePath}/chambres/new`}>

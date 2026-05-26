@@ -7,9 +7,11 @@ import { store } from '../lib/store.js'
 
 export default function Responsables() {
   const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    store.getResponsables().then(setRows).catch(() => setRows([]))
+    setLoading(true)
+    store.getResponsables().then(setRows).catch(() => setRows([])).finally(() => setLoading(false))
   }, [])
 
   const deleteRow = async (id) => {
@@ -52,6 +54,7 @@ export default function Responsables() {
       title="Responsables"
       columns={columns}
       rows={rows}
+      loading={loading}
       showHeading={false}
       actions={
         <Button as={Link} to="/admin/responsables/new">

@@ -7,11 +7,13 @@ import { store } from '../lib/store.js'
 
 export default function Reclamations() {
   const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ category: '', chambre: '', statut: '', type: '', date: '' })
   const role = getCurrentRole()
 
   useEffect(() => {
-    store.getReclamations(filters).then(setRows).catch(() => setRows([]))
+    setLoading(true)
+    store.getReclamations(filters).then(setRows).catch(() => setRows([])).finally(() => setLoading(false))
   }, [filters])
 
   const answerReclamation = async (row) => {
@@ -56,6 +58,7 @@ export default function Reclamations() {
       title="Reclamations"
       columns={columns}
       rows={rows}
+      loading={loading}
       showHeading={false}
       filters={
         <div className="flex flex-wrap items-center gap-2">

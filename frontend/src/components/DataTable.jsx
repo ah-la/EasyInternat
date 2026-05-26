@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react'
+import { Download, Loader2 } from 'lucide-react'
 import { flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table'
 import { useMemo } from 'react'
 import Button from './ui/Button.jsx'
@@ -48,7 +48,42 @@ function exportExcel(title, rows) {
   URL.revokeObjectURL(url)
 }
 
-export default function DataTable({ title, columns, rows, actions, filters, showHeading = true, exportBeforeActions = false }) {
+function LoadingRows({ columnsCount = 4 }) {
+  return Array.from({ length: 5 }).map((_, rowIndex) => (
+    <tr key={rowIndex} className="border-b border-border">
+      {Array.from({ length: columnsCount }).map((__, columnIndex) => (
+        <td key={columnIndex} className="px-3 py-3">
+          <div className="h-4 animate-pulse rounded bg-cyan-soft" />
+        </td>
+      ))}
+    </tr>
+  ))
+}
+
+function LoadingCards() {
+  return Array.from({ length: 3 }).map((_, index) => (
+    <div key={index} className="rounded-lg border border-border bg-white p-3 shadow-subtle">
+      <div className="mb-3 h-4 w-1/2 animate-pulse rounded bg-cyan-soft" />
+      <div className="space-y-2">
+        <div className="h-3 animate-pulse rounded bg-cyan-soft" />
+        <div className="h-3 w-3/4 animate-pulse rounded bg-cyan-soft" />
+        <div className="h-3 w-5/6 animate-pulse rounded bg-cyan-soft" />
+      </div>
+    </div>
+  ))
+}
+
+export default function DataTable({
+  title,
+  columns,
+  rows = [],
+  actions,
+  filters,
+  loading = false,
+  emptyMessage = 'Aucune donnee trouvee',
+  showHeading = true,
+  exportBeforeActions = false
+}) {
   const tableColumns = useMemo(() => normalizeColumns(columns, rows), [columns, rows])
 
   const table = useReactTable({
@@ -56,6 +91,7 @@ export default function DataTable({ title, columns, rows, actions, filters, show
     columns: tableColumns,
     getCoreRowModel: getCoreRowModel()
   })
+  const hasRows = table.getRowModel().rows.length > 0
 
   const exportButton = (
     <Button type="button" variant="secondary" onClick={() => exportExcel(title, rows)}>
@@ -76,8 +112,23 @@ export default function DataTable({ title, columns, rows, actions, filters, show
         </div>
       </div>
 
-      <Card>
+      <Card className="relative min-w-0 overflow-hidden">
+      {loading && hasRows ? (
+        <div className="absolute inset-0 z-10 flex items-start justify-end bg-white/55 p-3 backdrop-blur-[1px]">
+          <span className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-3 py-2 text-xs font-bold text-primary shadow-subtle">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Chargement
+          </span>
+        </div>
+      ) : null}
+
       <div className="space-y-3 md:hidden">
+        {loading && !hasRows ? <LoadingCards /> : null}
+        {!loading && !hasRows ? (
+          <div className="rounded-lg border border-border bg-white p-4 text-center text-sm font-semibold text-muted">
+            {emptyMessage}
+          </div>
+        ) : null}
         {table.getRowModel().rows.map((row) => {
           if (row.original?.isDetails) {
             return (
@@ -119,6 +170,14 @@ export default function DataTable({ title, columns, rows, actions, filters, show
             ))}
           </thead>
           <tbody className="divide-y divide-border">
+            {loading && !hasRows ? <LoadingRows columnsCount={tableColumns.length || 4} /> : null}
+            {!loading && !hasRows ? (
+              <tr>
+                <td colSpan={tableColumns.length || 1} className="px-3 py-8 text-center text-sm font-semibold text-muted">
+                  {emptyMessage}
+                </td>
+              </tr>
+            ) : null}
             {table.getRowModel().rows.map((row) => {
               if (row.original?.isDetails) {
                 return (

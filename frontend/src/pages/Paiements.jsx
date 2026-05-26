@@ -18,12 +18,14 @@ const columns = [
 
 export default function Paiements() {
   const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ category: '', chambre: '', mois: '', statut: '', date: '' })
   const role = getCurrentRole()
   const basePath = role === 'admin' ? '/admin' : '/responsable'
 
   useEffect(() => {
-    store.getPaiements(filters).then(setRows).catch(() => setRows([]))
+    setLoading(true)
+    store.getPaiements(filters).then(setRows).catch(() => setRows([])).finally(() => setLoading(false))
   }, [filters])
 
   return (
@@ -31,6 +33,7 @@ export default function Paiements() {
       title="Paiements"
       columns={columns}
       rows={rows}
+      loading={loading}
       showHeading={false}
       actions={
         <Button as={Link} to={`${basePath}/paiements/new`}>

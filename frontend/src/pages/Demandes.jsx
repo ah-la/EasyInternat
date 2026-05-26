@@ -8,11 +8,13 @@ import { store } from '../lib/store.js'
 
 export default function Demandes() {
   const [rows, setRows] = useState([])
+  const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ category: '', statut: '', date: '' })
   const role = getCurrentRole()
 
   useEffect(() => {
-    store.getDemandes(filters).then(setRows).catch(() => setRows([]))
+    setLoading(true)
+    store.getDemandes(filters).then(setRows).catch(() => setRows([])).finally(() => setLoading(false))
   }, [filters])
 
   const updateStatus = async (id, statut) => {
@@ -90,6 +92,7 @@ export default function Demandes() {
       title="Demandes"
       columns={columns}
       rows={rows}
+      loading={loading}
       showHeading={false}
       filters={
         <div className="flex flex-wrap items-center gap-2">
