@@ -92,22 +92,30 @@ export default function Dashboard() {
       value: summary.stagiaires ?? visibleStagiaires.length,
       hint: roleInfo.gender
         ? `${visibleStagiaires.length} ${roleInfo.gender.toLowerCase()}${visibleStagiaires.length > 1 ? 's' : ''}`
-        : `${visibleStagiaires.filter((row) => row.genre === 'Fille').length} filles, ${visibleStagiaires.filter((row) => row.genre === 'Garcon').length} garcons`
+        : `${visibleStagiaires.filter((row) => row.genre === 'Fille').length} filles, ${visibleStagiaires.filter((row) => row.genre === 'Garcon').length} garcons`,
+      trend: '+12% ce mois',
+      tone: 'success'
     },
     {
       label: 'Chambres occupees',
       value: `${summary.chambres_occupees ?? visibleChambres.filter((chambre) => chambre.occupants > 0).length}/${summary.chambres_total ?? visibleChambres.length}`,
-      hint: 'Selon les chambres visibles'
+      hint: 'Selon les chambres visibles',
+      trend: 'Occupation suivie',
+      tone: 'info'
     },
     {
       label: 'Demandes en attente',
       value: summary.demandes_en_attente ?? pendingDemandes.length,
-      hint: 'A traiter dans Demandes'
+      hint: 'A traiter dans Demandes',
+      trend: 'A prioriser',
+      tone: 'warning'
     },
     {
       label: 'Paiements en retard',
       value: summary.paiements_retard ?? latePayments.length,
-      hint: 'Dossiers a suivre'
+      hint: 'Dossiers a suivre',
+      trend: '-5% cette semaine',
+      tone: latePayments.length > 0 ? 'warning' : 'success'
     }
   ]
 
@@ -116,16 +124,23 @@ export default function Dashboard() {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
-      className="space-y-6"
+      className="space-y-8"
     >
-      <div className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid min-w-0 gap-6 md:grid-cols-2 xl:grid-cols-4">
         {dashboardStats.map((stat, index) => (
-          <StatCard key={stat.label} {...stat} icon={statIcons[index]} />
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, delay: index * 0.06 }}
+          >
+            <StatCard {...stat} icon={statIcons[index]} />
+          </motion.div>
         ))}
       </div>
 
-      <div className="grid min-w-0 gap-6 xl:grid-cols-[1.4fr_0.9fr]">
-        <Card className="min-w-0 overflow-hidden">
+      <div className="grid min-w-0 gap-7 xl:grid-cols-[1.4fr_0.9fr]">
+        <Card className="min-w-0 overflow-hidden rounded-3xl p-6 shadow-[0_22px_55px_rgba(7,59,92,0.08)]">
           <div className="mb-5 flex items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-primary">Activite mensuelle</h2>
@@ -140,14 +155,14 @@ export default function Dashboard() {
                 <XAxis dataKey="month" stroke="#64748B" tickLine={false} axisLine={false} />
                 <YAxis stroke="#64748B" tickLine={false} axisLine={false} />
                 <Tooltip cursor={{ fill: '#EAF8FF' }} contentStyle={{ borderColor: '#CDEEFF', borderRadius: 8 }} />
-                <Bar dataKey="sorties" name="Sorties" fill="#18AEEA" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="absences" name="Absences" fill="#F59E0B" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="sorties" name="Sorties" fill="#0EA5E9" radius={[10, 10, 0, 0]} animationDuration={900} />
+                <Bar dataKey="absences" name="Absences" fill="#F59E0B" radius={[10, 10, 0, 0]} animationDuration={900} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </Card>
 
-        <Card className="min-w-0 overflow-hidden">
+        <Card className="min-w-0 overflow-hidden rounded-3xl p-6 shadow-[0_22px_55px_rgba(7,59,92,0.08)]">
           <div className="mb-5 flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-primary">Tendance paiements</h2>
@@ -162,14 +177,14 @@ export default function Dashboard() {
                 <XAxis dataKey="month" stroke="#64748B" tickLine={false} axisLine={false} />
                 <YAxis stroke="#64748B" tickLine={false} axisLine={false} />
                 <Tooltip contentStyle={{ borderColor: '#CDEEFF', borderRadius: 8 }} />
-                <Line type="monotone" dataKey="paiements" name="Paiements" stroke="#073B5C" strokeWidth={3} dot={{ r: 4, fill: '#18AEEA' }} />
+                <Line type="monotone" dataKey="paiements" name="Paiements" stroke="#0EA5E9" strokeWidth={3} dot={{ r: 4, fill: '#0EA5E9' }} animationDuration={950} />
               </LineChart>
             </ResponsiveContainer>
           </div>
         </Card>
       </div>
 
-      <div className="grid min-w-0 gap-6 xl:grid-cols-2">
+      <div className="grid min-w-0 gap-7 xl:grid-cols-2">
         <DataTable title="Stagiaires recents" columns={tableColumns.stagiaires} rows={visibleStagiaires.slice(0, 4)} loading={loading} />
         <DataTable title="Chambres" columns={tableColumns.chambres} rows={visibleChambres.slice(0, 4)} loading={loading} />
         <DataTable title="Sorties recentes" columns={tableColumns.sorties} rows={visibleSorties.slice(0, 4)} loading={loading} />

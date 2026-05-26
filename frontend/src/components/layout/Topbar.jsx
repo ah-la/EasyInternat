@@ -29,15 +29,16 @@ export default function Topbar({ title = 'Dashboard' }) {
   }
 
   return (
-    <header className="sticky top-0 z-20 -mx-4 mb-6 border-b border-border bg-bg/90 px-4 py-4 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <header className="sticky top-0 z-20 -mx-4 mb-8 border-b border-sky-100 bg-bg/85 px-4 py-4 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-normal text-primary">{title}</h1>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-secondary">Espace de gestion</p>
+          <h1 className="mt-1 text-3xl font-black tracking-normal text-primary">{title}</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex h-11 items-center gap-3 rounded-lg border border-border bg-white px-3 text-left shadow-subtle">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-cyan-soft text-primary">
+          <div className="flex h-12 items-center gap-3 rounded-2xl border border-sky-100 bg-white/90 px-3 text-left shadow-subtle">
+            <span className="grid h-9 w-9 place-items-center rounded-xl bg-cyan-soft text-primary">
               <UserRound className="h-4 w-4" />
             </span>
             <span className="hidden leading-tight sm:block">
@@ -49,7 +50,7 @@ export default function Topbar({ title = 'Dashboard' }) {
           <button
             type="button"
             onClick={logout}
-            className="flex h-11 items-center gap-2 rounded-lg border border-border bg-white px-3 text-sm font-semibold text-primary shadow-subtle transition hover:border-danger/40 hover:text-danger"
+            className="flex h-12 items-center gap-2 rounded-2xl border border-sky-100 bg-white/90 px-3 text-sm font-bold text-primary shadow-subtle transition hover:scale-[1.02] hover:border-danger/40 hover:text-danger"
           >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Deconnexion</span>
@@ -66,7 +67,7 @@ export default function Topbar({ title = 'Dashboard' }) {
               key={to}
               to={to}
               className={cn(
-                'inline-flex h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition',
+                'inline-flex h-10 shrink-0 items-center gap-2 rounded-xl border px-3 text-sm font-bold transition',
                 active ? 'border-secondary/40 bg-cyan-soft text-primary' : 'border-border bg-white text-slate-600'
               )}
             >
