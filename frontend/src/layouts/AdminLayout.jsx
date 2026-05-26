@@ -35,7 +35,7 @@ export default function AdminLayout() {
   return (
     <div className="app-shell min-h-screen overflow-x-hidden bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.12),transparent_32%),#f0f9ff] text-text">
       <Sidebar />
-      <main className="min-h-screen overflow-x-hidden px-4 pb-10 sm:px-6 lg:ml-72 lg:px-10">
+      <main className="min-h-screen overflow-x-hidden px-4 pb-10 sm:px-6 lg:ml-20 lg:px-10">
         <Topbar title={pageTitle(pathname, role)} />
         <Outlet />
       </main>

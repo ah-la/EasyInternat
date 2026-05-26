@@ -26,17 +26,44 @@ export default function Reclamations() {
 
   const columns = [
     { accessorKey: 'id', header: 'Ref.' },
-    { accessorKey: 'nom', header: 'Nom' },
-    { accessorKey: 'prenom', header: 'Prenom' },
-    { accessorKey: 'cin', header: 'CIN' },
-    { accessorKey: 'telephone', header: 'Telephone' },
+    {
+      accessorKey: 'stagiaire',
+      header: 'Stagiaire',
+      cell: ({ row }) => (
+        <div className="space-y-1">
+          <p className="font-black text-primary">{row.original.nom} {row.original.prenom}</p>
+          <p className="text-xs font-semibold text-muted">CIN {row.original.cin}</p>
+          <p className="text-xs font-semibold text-muted">{row.original.telephone}</p>
+        </div>
+      )
+    },
     { accessorKey: 'chambre', header: 'Chambre' },
-    { accessorKey: 'categorie', header: 'Categorie' },
-    { accessorKey: 'type', header: 'Type' },
-    { accessorKey: 'sujet', header: 'Sujet' },
-    { accessorKey: 'message', header: 'Message' },
+    {
+      accessorKey: 'type',
+      header: 'Categorie',
+      cell: ({ row }) => (
+        <div className="space-y-1">
+          <Badge tone="info">{row.original.categorie}</Badge>
+          <p className="text-sm font-bold text-primary">{row.original.type}</p>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'sujet',
+      header: 'Sujet',
+      cell: ({ row }) => (
+        <div className="space-y-1">
+          <p className="font-bold text-primary">{row.original.sujet}</p>
+          <p className="line-clamp-3 text-sm text-slate-600">{row.original.message}</p>
+        </div>
+      )
+    },
     { accessorKey: 'statut', header: 'Statut', cell: ({ getValue }) => <Badge tone={statusTone(getValue())}>{getValue()}</Badge> },
-    { accessorKey: 'reponse_admin', header: 'Reponse' },
+    {
+      accessorKey: 'reponse_admin',
+      header: 'Reponse',
+      cell: ({ getValue }) => <span className="line-clamp-3 text-sm text-slate-600">{getValue() || '-'}</span>
+    },
     {
       accessorKey: 'actions',
       header: 'Actions',

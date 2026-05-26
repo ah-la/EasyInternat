@@ -32,8 +32,7 @@ export default function Topbar({ title = 'Dashboard' }) {
     <header className="sticky top-0 z-20 -mx-4 mb-8 border-b border-sky-100 bg-bg/85 px-4 py-4 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-secondary">Espace de gestion</p>
-          <h1 className="mt-1 text-3xl font-black tracking-normal text-primary">{title}</h1>
+          <h1 className="text-3xl font-black tracking-normal text-primary">{title}</h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">

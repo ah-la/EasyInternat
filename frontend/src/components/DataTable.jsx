@@ -200,7 +200,7 @@ export default function DataTable({
         })}
       </div>
 
-      <div className="hidden max-h-[620px] overflow-auto rounded-2xl border border-sky-50 md:block">
+      <div className="hidden rounded-2xl border border-sky-50 md:block">
         <table className="w-full table-fixed text-left text-sm">
           <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
