@@ -45,7 +45,10 @@ const mapStagiaire = (row = {}) => ({
   chambre: row.chambre?.numero || row.chambre || '',
   chambreDetails: row.chambre && typeof row.chambre === 'object' ? row.chambre : null,
   chambre_id: row.chambre_id || row.chambre?.id || '',
-  paiement: row.paiement || ''
+  payment_status: row.payment_status || '',
+  payment_due_month: row.payment_due_month || '',
+  payment_latest_month: row.payment_latest_month || '',
+  paiement: row.payment_label || row.paiement || 'A payer'
 })
 
 const mapResponsable = (row = {}) => ({

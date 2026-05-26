@@ -2,15 +2,25 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import DataTable from '../components/DataTable.jsx'
+import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import { getCurrentRole } from '../lib/authRole.js'
 import { store } from '../lib/store.js'
+
+const categoryClass = (category = '') =>
+  String(category).toLowerCase().includes('fille')
+    ? 'border-pink-200 bg-pink-50 text-pink-700'
+    : 'border-sky-200 bg-sky-50 text-sky-700'
 
 const columns = [
   { accessorKey: 'mois', header: 'Mois' },
   { accessorKey: 'stagiaire', header: 'Stagiaire' },
   { accessorKey: 'chambre', header: 'Chambre' },
-  { accessorKey: 'categorie', header: 'Categorie' },
+  {
+    accessorKey: 'categorie',
+    header: 'Categorie',
+    cell: ({ getValue }) => <Badge className={categoryClass(getValue())}>{getValue()}</Badge>
+  },
   { accessorKey: 'montant', header: 'Montant' },
   { accessorKey: 'statut', header: 'Statut' },
   { accessorKey: 'date', header: 'Date paiement' }
@@ -19,7 +29,7 @@ const columns = [
 export default function Paiements() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ category: '', chambre: '', mois: '', statut: '', date: '' })
+  const [filters, setFilters] = useState({ category: '', chambre: '', mois: '', date: '' })
   const role = getCurrentRole()
   const basePath = role === 'admin' ? '/admin' : '/responsable'
 
@@ -66,16 +76,6 @@ export default function Paiements() {
             placeholder="Mois"
             className="h-10 w-28 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
           />
-          <select
-            value={filters.statut}
-            onChange={(event) => setFilters((current) => ({ ...current, statut: event.target.value }))}
-            className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
-          >
-            <option value="">Statut</option>
-            <option value="paye">Paye</option>
-            <option value="en_retard">En retard</option>
-            <option value="non_paye">Non paye</option>
-          </select>
           <input
             type="date"
             value={filters.date}

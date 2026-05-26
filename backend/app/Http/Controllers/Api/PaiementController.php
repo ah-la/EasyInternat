@@ -15,6 +15,7 @@ class PaiementController extends Controller
         $category = $request->user()?->role === 'responsable' ? $request->user()->category : null;
 
         return Paiement::with('stagiaire.chambre')
+            ->where('statut', 'paye')
             ->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)));
     }
 
@@ -63,11 +64,13 @@ class PaiementController extends Controller
             'stagiaire_id' => 'required|exists:stagiaires,id',
             'mois' => 'required|string|max:255',
             'montant' => 'required|numeric|min:0',
-            'statut' => 'required|in:paye,en_retard,non_paye',
+            'statut' => 'nullable|in:paye',
             'date_paiement' => 'nullable|date',
         ]);
 
         $this->ensureStagiaireVisible($request, (int) $data['stagiaire_id']);
+        $data['statut'] = 'paye';
+        $data['date_paiement'] = $data['date_paiement'] ?? today();
 
         $paiement = Paiement::create($data)->load('stagiaire.chambre');
         ActionHistory::record($request->user(), 'paiement_created', $paiement, 'Paiement cree', $data);
@@ -92,7 +95,7 @@ class PaiementController extends Controller
             'stagiaire_id' => 'sometimes|exists:stagiaires,id',
             'mois' => 'sometimes|string|max:255',
             'montant' => 'sometimes|numeric|min:0',
-            'statut' => 'sometimes|in:paye,en_retard,non_paye',
+            'statut' => 'sometimes|in:paye',
             'date_paiement' => 'nullable|date',
         ]);
 

@@ -2,9 +2,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Eye, Pencil, Plus, Trash2 } from 'lucide-react'
 import DataTable from '../components/DataTable.jsx'
+import Badge, { statusTone } from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import { filterStagiairesByRole, getCurrentRole } from '../lib/authRole.js'
 import { store } from '../lib/store.js'
+
+const genreClass = (genre = '') =>
+  String(genre).toLowerCase().includes('fille')
+    ? 'border-pink-200 bg-pink-50 text-pink-700'
+    : 'border-sky-200 bg-sky-50 text-sky-700'
 
 export default function Stagiaires() {
   const [rows, setRows] = useState([])
@@ -20,6 +26,7 @@ export default function Stagiaires() {
   }, [filters])
 
   const deleteRow = async (id) => {
+    if (!window.confirm('Vous voulez vraiment supprimer ce stagiaire ?')) return
     await store.deleteStagiaire(id)
     setRows((current) => current.filter((row) => row.id !== id))
   }
@@ -28,9 +35,24 @@ export default function Stagiaires() {
     { accessorKey: 'id', header: 'ID' },
     { accessorKey: 'nom', header: 'Stagiaire' },
     { accessorKey: 'cin', header: 'CIN' },
-    { accessorKey: 'genre', header: 'Genre' },
+    {
+      accessorKey: 'genre',
+      header: 'Genre',
+      cell: ({ getValue }) => <Badge className={genreClass(getValue())}>{getValue()}</Badge>
+    },
     { accessorKey: 'chambre', header: 'Chambre' },
-    { accessorKey: 'paiement', header: 'Paiement' },
+    {
+      accessorKey: 'paiement',
+      header: 'Paiement',
+      cell: ({ row, getValue }) => (
+        <div className="space-y-1">
+          <Badge tone={statusTone(getValue())}>{getValue()}</Badge>
+          {row.original.payment_due_month ? (
+            <p className="text-xs font-semibold text-muted">Mois: {row.original.payment_due_month}</p>
+          ) : null}
+        </div>
+      )
+    },
     {
       accessorKey: 'actions',
       header: 'Actions',

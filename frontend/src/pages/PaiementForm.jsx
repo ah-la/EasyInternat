@@ -4,7 +4,7 @@ import { ArrowLeft, Check, Plus, X } from 'lucide-react'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import { filterStagiairesByRole, getCurrentRole } from '../lib/authRole.js'
-import { statusToApi, store } from '../lib/store.js'
+import { store } from '../lib/store.js'
 
 const months = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre']
 
@@ -17,7 +17,6 @@ export default function PaiementForm() {
   const [form, setForm] = useState({
     stagiaire: '',
     montant: '300 DH',
-    statut: 'Paye',
     date: new Date().toISOString().slice(0, 10)
   })
 
@@ -37,12 +36,16 @@ export default function PaiementForm() {
 
   const submit = async (event) => {
     event.preventDefault()
+    if (selectedMonths.length === 0) {
+      window.alert('Selectionnez au moins un mois paye.')
+      return
+    }
     const stagiaire = stagiaires.find((row) => row.nom === form.stagiaire)
     await store.createPaiement({
       stagiaire_id: stagiaire?.id,
       mois: selectedMonths.join(', '),
       montant: Number(String(form.montant).replace(/[^\d.]/g, '')) || 0,
-      statut: statusToApi(form.statut),
+      statut: 'paye',
       date_paiement: form.date
     })
     navigate(`${basePath}/paiements`)
@@ -110,14 +113,9 @@ export default function PaiementForm() {
           <span className="mb-2 block text-sm font-semibold text-primary">Date paiement</span>
           <input required className="input" type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
         </label>
-        <label className="block md:col-span-2">
-          <span className="mb-2 block text-sm font-semibold text-primary">Statut</span>
-          <select className="input" value={form.statut} onChange={(event) => setForm({ ...form, statut: event.target.value })}>
-            <option>Paye</option>
-            <option>En retard</option>
-            <option>Non paye</option>
-          </select>
-        </label>
+        <div className="rounded-xl border border-sky-100 bg-cyan-soft/60 p-3 text-sm font-semibold text-primary md:col-span-2">
+          Ce formulaire ajoute uniquement les paiements encaisses. Les retards sont calcules automatiquement dans Stagiaires.
+        </div>
 
         <div className="flex items-end gap-2 md:col-span-2">
           <Button type="submit">

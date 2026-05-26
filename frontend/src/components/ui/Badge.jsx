@@ -15,7 +15,7 @@ export function statusTone(value = '') {
     return 'success'
   }
 
-  if (['retard', 'attente', 'cours', 'liste'].some((word) => normalized.includes(word))) {
+  if (['retard', 'attente', 'cours', 'liste', 'payer'].some((word) => normalized.includes(word))) {
     return 'warning'
   }
 

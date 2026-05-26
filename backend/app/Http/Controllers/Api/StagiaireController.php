@@ -4,14 +4,19 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\{Chambre, Stagiaire, User};
+use App\Services\PaymentStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 class StagiaireController extends Controller
 {
+    public function __construct(private PaymentStatusService $paymentStatus)
+    {
+    }
+
     private function scoped(Request $request)
     {
-        $query = Stagiaire::with('chambre', 'user');
+        $query = Stagiaire::with('chambre', 'user', 'paiements');
         $user = $request->user();
 
         if ($user?->role === 'responsable' && $user->category) {
@@ -64,7 +69,10 @@ class StagiaireController extends Controller
                 ->orWhere('cin', 'like', '%'.$search.'%'));
         }
 
-        return $query->latest()->paginate(100);
+        $stagiaires = $query->latest()->paginate(100);
+        $stagiaires->getCollection()->transform(fn (Stagiaire $stagiaire) => $this->paymentStatus->decorate($stagiaire));
+
+        return $stagiaires;
     }
 
     public function store(Request $request)
@@ -113,7 +121,7 @@ class StagiaireController extends Controller
             $userId = $user->id;
         }
 
-        return Stagiaire::create([
+        $stagiaire = Stagiaire::create([
             'user_id' => $userId,
             'nom' => $data['nom'],
             'prenom' => $data['prenom'] ?? '',
@@ -123,20 +131,22 @@ class StagiaireController extends Controller
             'filiere' => $data['filiere'] ?? '',
             'chambre_id' => $chambreId,
             'category' => $category,
-        ])->load('chambre', 'user');
+        ])->load('chambre', 'user', 'paiements');
+
+        return $this->paymentStatus->decorate($stagiaire);
     }
 
     public function show(Request $request, Stagiaire $stagiaire)
     {
         $this->ensureVisible($request, $stagiaire);
-        return $stagiaire->load('chambre', 'user');
+        return $this->paymentStatus->decorate($stagiaire->load('chambre', 'user', 'paiements'));
     }
 
     public function profile(Request $request, Stagiaire $stagiaire)
     {
         $this->ensureVisible($request, $stagiaire);
 
-        return $stagiaire->load([
+        $stagiaire->load([
             'user',
             'chambre',
             'paiements' => fn ($q) => $q->latest(),
@@ -144,6 +154,8 @@ class StagiaireController extends Controller
             'reclamations' => fn ($q) => $q->latest(),
             'sorties' => fn ($q) => $q->latest(),
         ]);
+
+        return $this->paymentStatus->decorate($stagiaire);
     }
 
     public function update(Request $request, Stagiaire $stagiaire)
@@ -195,7 +207,7 @@ class StagiaireController extends Controller
             $stagiaire->user->update($userData);
         }
 
-        return $stagiaire->load('chambre', 'user');
+        return $this->paymentStatus->decorate($stagiaire->load('chambre', 'user', 'paiements'));
     }
 
     public function destroy(Request $request, Stagiaire $stagiaire)
