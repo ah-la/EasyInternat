@@ -15,6 +15,7 @@ export default function Responsables() {
   }, [])
 
   const deleteRow = async (id) => {
+    if (!window.confirm('Vous voulez vraiment supprimer ce responsable ?')) return
     await store.deleteResponsable(id)
     setRows((current) => current.filter((row) => row.id !== id))
   }

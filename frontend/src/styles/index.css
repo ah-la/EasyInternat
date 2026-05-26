@@ -48,6 +48,30 @@ textarea {
   font: inherit;
 }
 
+.sidebar-scrollbar {
+  scrollbar-color: #7dd3fc #eff9ff;
+  scrollbar-width: thin;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+  background: #eff9ff;
+  border-radius: 999px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #bae6fd, #38bdf8);
+  border: 2px solid #eff9ff;
+  border-radius: 999px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #7dd3fc, #0ea5e9);
+}
+
 @layer components {
   .card {
     @apply rounded-2xl border border-sky-100 bg-white p-5 shadow-subtle;

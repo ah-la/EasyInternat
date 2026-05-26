@@ -52,7 +52,7 @@ export default function Sidebar() {
   const sections = makeItems(basePath, role)
 
   return (
-    <aside className="group/sidebar fixed inset-y-0 left-0 z-30 hidden w-20 overflow-y-auto overflow-x-hidden border-r border-sky-100 bg-white/95 px-3 py-5 shadow-[18px_0_50px_rgba(14,165,233,0.08)] backdrop-blur-2xl transition-all duration-300 hover:w-72 hover:px-4 lg:block">
+    <aside className="sidebar-scrollbar group/sidebar fixed inset-y-0 left-0 z-30 hidden w-20 overflow-y-auto overflow-x-hidden border-r border-sky-100 bg-white/95 px-3 py-5 shadow-[18px_0_50px_rgba(14,165,233,0.08)] backdrop-blur-2xl transition-all duration-300 hover:w-72 hover:px-4 lg:block">
       <div className="absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-secondary/40 to-transparent" />
       <div className="w-14 overflow-hidden transition-all duration-300 group-hover/sidebar:w-64">
         <Logo compact />
