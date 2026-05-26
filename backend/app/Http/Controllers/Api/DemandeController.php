@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\{ActionHistory, Demande, StagiaireCentre, Stagiaire, User};
+use App\Models\{ActionHistory, Chambre, Demande, StagiaireCentre, Stagiaire, User};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
@@ -173,6 +173,16 @@ class DemandeController extends Controller
 
         $password = Str::password(8);
         $category = $this->categoryFromGenre($demande->genre);
+        $chambreId = Chambre::query()
+            ->where('category', $category)
+            ->withCount('stagiaires')
+            ->get()
+            ->first(fn (Chambre $chambre) => $chambre->stagiaires_count < $chambre->capacite)
+            ?->id;
+
+        if (!$chambreId) {
+            return response()->json(['message' => 'Aucune chambre disponible pour cette categorie'], 422);
+        }
 
         $user = User::firstOrCreate(
             ['email' => $demande->email],
@@ -193,9 +203,14 @@ class DemandeController extends Controller
                 'telephone' => $demande->telephone,
                 'genre' => $this->genreFromCategory($category),
                 'filiere' => $demande->filiere,
+                'chambre_id' => $chambreId,
                 'category' => $category,
             ]
         );
+
+        if (!$stagiaire->chambre_id) {
+            $stagiaire->update(['chambre_id' => $chambreId]);
+        }
 
         $demande->update(['statut' => 'acceptee']);
         ActionHistory::record($request->user(), 'demande_accepted', $demande, 'Demande acceptee', [

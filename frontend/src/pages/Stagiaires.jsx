@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Eye, Pencil, Plus, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import DataTable from '../components/DataTable.jsx'
 import Badge, { statusTone } from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
+import ConfirmDialog from '../components/ui/ConfirmDialog.jsx'
 import { filterStagiairesByRole, getCurrentRole } from '../lib/authRole.js'
 import { store } from '../lib/store.js'
 
@@ -15,8 +16,10 @@ const genreClass = (genre = '') =>
 
 export default function Stagiaires() {
   const [rows, setRows] = useState([])
+  const [chambres, setChambres] = useState([])
   const [loading, setLoading] = useState(true)
   const [filters, setFilters] = useState({ search: '', category: '', chambre: '', payment_status: '' })
+  const [deleteTarget, setDeleteTarget] = useState(null)
   const role = getCurrentRole()
   const basePath = role === 'admin' ? '/admin' : '/responsable'
   const visibleRows = useMemo(() => filterStagiairesByRole(rows, role), [rows, role])
@@ -26,10 +29,17 @@ export default function Stagiaires() {
     store.getStagiaires(filters).then(setRows).catch(() => setRows([])).finally(() => setLoading(false))
   }, [filters])
 
-  const deleteRow = async (id) => {
-    if (!window.confirm('Vous voulez vraiment supprimer ce stagiaire ?')) return
-    await store.deleteStagiaire(id)
-    setRows((current) => current.filter((row) => row.id !== id))
+  useEffect(() => {
+    store.getChambres().then(setChambres).catch(() => setChambres([]))
+  }, [])
+
+  const resetFilters = () => setFilters({ search: '', category: '', chambre: '', payment_status: '' })
+
+  const deleteRow = async () => {
+    if (!deleteTarget) return
+    await store.deleteStagiaire(deleteTarget.id)
+    setRows((current) => current.filter((row) => row.id !== deleteTarget.id))
+    setDeleteTarget(null)
     toast.success('Stagiaire supprime avec succes.')
   }
 
@@ -76,7 +86,7 @@ export default function Stagiaires() {
           </Link>
           <button
             type="button"
-            onClick={() => deleteRow(row.original.id)}
+            onClick={() => setDeleteTarget(row.original)}
             title="Supprimer"
             className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-white text-danger shadow-subtle transition hover:scale-105 hover:bg-red-50"
           >
@@ -88,26 +98,31 @@ export default function Stagiaires() {
   ]
 
   return (
-    <DataTable
-      title="Stagiaires"
-      columns={columns}
-      rows={visibleRows}
-      loading={loading}
-      showHeading={false}
-      actions={
-        <Button as={Link} to={`${basePath}/stagiaires/new`}>
-          <Plus className="h-4 w-4" />
-          Ajouter stagiaire
-        </Button>
-      }
-      filters={
-        <div className="flex flex-wrap items-center gap-2">
+    <>
+      <DataTable
+        title="Stagiaires"
+        columns={columns}
+        rows={visibleRows}
+        loading={loading}
+        showHeading={false}
+        searchable={false}
+        emptyMessage="Aucun stagiaire trouve."
+        actions={
+          <>
           <input
             value={filters.search}
             onChange={(event) => setFilters((current) => ({ ...current, search: event.target.value }))}
-            placeholder="Recherche"
-            className="h-10 w-36 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
+            placeholder="Rechercher dans stagiaires..."
+            className="h-11 w-full rounded-xl border border-sky-100 bg-white/90 px-3 text-sm font-semibold text-primary shadow-subtle outline-none transition placeholder:text-muted focus:border-secondary focus:ring-4 focus:ring-secondary/15 sm:w-72"
           />
+          <Button as={Link} to={`${basePath}/stagiaires/new`}>
+            <Plus className="h-4 w-4" />
+            Ajouter stagiaire
+          </Button>
+          </>
+        }
+        filters={
+          <div className="flex flex-wrap items-center gap-2">
           {role === 'admin' ? (
             <select
               value={filters.category}
@@ -119,12 +134,16 @@ export default function Stagiaires() {
               <option value="garcons">Garcons</option>
             </select>
           ) : null}
-          <input
+          <select
             value={filters.chambre}
             onChange={(event) => setFilters((current) => ({ ...current, chambre: event.target.value }))}
-            placeholder="Chambre"
-            className="h-10 w-28 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
-          />
+            className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
+          >
+            <option value="">Chambre</option>
+            {chambres.map((chambre) => (
+              <option key={chambre.id} value={chambre.numero}>{chambre.numero}</option>
+            ))}
+          </select>
           <select
             value={filters.payment_status}
             onChange={(event) => setFilters((current) => ({ ...current, payment_status: event.target.value }))}
@@ -135,8 +154,24 @@ export default function Stagiaires() {
             <option value="en_retard">En retard</option>
             <option value="a_payer">Non paye</option>
           </select>
+          <button
+            type="button"
+            onClick={resetFilters}
+            title="Reinitialiser les filtres"
+            className="grid h-10 w-10 place-items-center rounded-xl border border-sky-100 bg-white text-primary shadow-subtle transition hover:bg-cyan-soft"
+          >
+            <RotateCcw className="h-4 w-4" />
+          </button>
         </div>
       }
     />
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Supprimer le stagiaire"
+        message={`Vous voulez vraiment supprimer ${deleteTarget?.nom || 'ce stagiaire'} ? Cette action est definitive.`}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={deleteRow}
+      />
+    </>
   )
 }

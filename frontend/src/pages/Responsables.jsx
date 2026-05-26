@@ -1,23 +1,28 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import DataTable from '../components/DataTable.jsx'
 import Button from '../components/ui/Button.jsx'
+import ConfirmDialog from '../components/ui/ConfirmDialog.jsx'
 import { store } from '../lib/store.js'
 
 export default function Responsables() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
+  const [deleteTarget, setDeleteTarget] = useState(null)
 
   useEffect(() => {
     setLoading(true)
     store.getResponsables().then(setRows).catch(() => setRows([])).finally(() => setLoading(false))
   }, [])
 
-  const deleteRow = async (id) => {
-    if (!window.confirm('Vous voulez vraiment supprimer ce responsable ?')) return
-    await store.deleteResponsable(id)
-    setRows((current) => current.filter((row) => row.id !== id))
+  const deleteRow = async () => {
+    if (!deleteTarget) return
+    await store.deleteResponsable(deleteTarget.id)
+    setRows((current) => current.filter((row) => row.id !== deleteTarget.id))
+    setDeleteTarget(null)
+    toast.success('Responsable supprime avec succes.')
   }
 
   const columns = [
@@ -39,7 +44,7 @@ export default function Responsables() {
           </Link>
           <button
             type="button"
-            onClick={() => deleteRow(row.original.id)}
+            onClick={() => setDeleteTarget(row.original)}
             title="Supprimer"
             className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-white text-danger shadow-subtle transition hover:scale-105 hover:bg-red-50"
           >
@@ -51,18 +56,27 @@ export default function Responsables() {
   ]
 
   return (
-    <DataTable
-      title="Responsables"
-      columns={columns}
-      rows={rows}
-      loading={loading}
-      showHeading={false}
-      actions={
-        <Button as={Link} to="/admin/responsables/new">
-          <Plus className="h-4 w-4" />
-          Ajouter responsable
-        </Button>
-      }
-    />
+    <>
+      <DataTable
+        title="Responsables"
+        columns={columns}
+        rows={rows}
+        loading={loading}
+        showHeading={false}
+        actions={
+          <Button as={Link} to="/admin/responsables/new">
+            <Plus className="h-4 w-4" />
+            Ajouter responsable
+          </Button>
+        }
+      />
+      <ConfirmDialog
+        open={Boolean(deleteTarget)}
+        title="Supprimer le responsable"
+        message={`Vous voulez vraiment supprimer ${deleteTarget?.nom || 'ce responsable'} ? Cette action est definitive.`}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={deleteRow}
+      />
+    </>
   )
 }

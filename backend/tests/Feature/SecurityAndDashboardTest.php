@@ -186,6 +186,39 @@ class SecurityAndDashboardTest extends TestCase
         $this->get("/api/demandes/{$demandeId}/certificat")->assertOk();
     }
 
+    public function test_accepting_demande_assigns_available_room(): void
+    {
+        Storage::fake('public');
+
+        $admin = User::factory()->create(['role' => 'admin']);
+        $room = Chambre::factory()->create(['category' => 'filles', 'capacite' => 4]);
+        StagiaireCentre::create([
+            'nom' => 'Sara',
+            'prenom' => 'Amal',
+            'cin' => 'DMF1003',
+            'numero_inscription' => 'CMC-D-003',
+            'filiere' => 'Developpement Digital',
+            'genre' => 'Fille',
+        ]);
+
+        $demandeId = $this->postJson('/api/demandes', [
+            'nom' => 'Sara',
+            'cin' => 'DMF1003',
+            'email' => 'sara.demo@cmc.test',
+            'telephone' => '0633333303',
+            'genre' => 'Fille',
+            'filiere' => 'Developpement Digital',
+            'certificat_residence' => UploadedFile::fake()->create('certificat.pdf', 32, 'application/pdf'),
+        ])->assertCreated()->json('id');
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson("/api/demandes/{$demandeId}/accept")
+            ->assertOk()
+            ->assertJsonPath('stagiaire.chambre_id', $room->id);
+    }
+
+
     public function test_paiement_creation_accepts_only_real_paid_records(): void
     {
         $admin = User::factory()->create(['role' => 'admin']);
