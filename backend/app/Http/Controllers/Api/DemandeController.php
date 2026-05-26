@@ -78,11 +78,11 @@ class DemandeController extends Controller
             'certificat_residence' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
         ]);
 
-        $exists = StagiaireCentre::where('cin', $data['cin'])
+        $candidat = StagiaireCentre::where('cin', $data['cin'])
             ->orWhere('numero_inscription', $data['numero_inscription'] ?? '---')
-            ->exists();
+            ->first();
 
-        if (!$exists) {
+        if (!$candidat) {
             return response()->json(['message' => 'Candidat non inscrit au centre'], 403);
         }
 
@@ -94,8 +94,11 @@ class DemandeController extends Controller
             $data['certificat_residence'] = $request->file('certificat_residence')->store('certificats', 'public');
         }
 
-        $data['prenom'] = $data['prenom'] ?? '';
-        $data['genre'] = $this->genreFromCategory($this->categoryFromGenre($data['genre']));
+        $data['nom'] = $candidat->nom ?: $data['nom'];
+        $data['prenom'] = $candidat->prenom ?: ($data['prenom'] ?? '');
+        $data['numero_inscription'] = $candidat->numero_inscription ?: ($data['numero_inscription'] ?? null);
+        $data['filiere'] = $candidat->filiere ?: $data['filiere'];
+        $data['genre'] = $this->genreFromCategory($this->categoryFromGenre($candidat->genre ?: $data['genre']));
         $data['statut'] = 'en_attente';
 
         return Demande::create($data);

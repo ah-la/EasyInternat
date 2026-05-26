@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\{Chambre, Paiement, Presence, Reclamation, Stagiaire, StagiaireCentre, User};
+use App\Models\{Chambre, Demande, Paiement, Presence, Reclamation, Stagiaire, StagiaireCentre, User};
 use Illuminate\Database\Seeder;
 
 class DemoStagiairesSeeder extends Seeder
@@ -78,6 +78,8 @@ class DemoStagiairesSeeder extends Seeder
 
             $this->seedProfileData($stagiaire, $index);
         }
+
+        $this->seedDemandes();
     }
 
     private function chambre(string $numero, string $category, string $etage): Chambre
@@ -92,16 +94,19 @@ class DemoStagiairesSeeder extends Seeder
 
     private function seedProfileData(Stagiaire $stagiaire, int $index): void
     {
-        $months = ['Mars', 'Avril', 'Mai'];
+        Paiement::where('stagiaire_id', $stagiaire->id)
+            ->whereIn('mois', ['Mars', 'Avril', 'Mai'])
+            ->delete();
+
+        $months = $index % 3 === 0 ? ['Mars', 'Avril'] : ['Mars', 'Avril', 'Mai'];
 
         foreach ($months as $monthIndex => $mois) {
-            $statut = ($index + $monthIndex) % 3 === 0 ? 'en_retard' : 'paye';
             $attributes = Paiement::factory()
                 ->make([
                     'stagiaire_id' => $stagiaire->id,
                     'mois' => $mois,
-                    'statut' => $statut,
-                    'date_paiement' => $statut === 'paye' ? now()->subDays($monthIndex + 1) : null,
+                    'statut' => 'paye',
+                    'date_paiement' => now()->subDays($monthIndex + 1),
                 ])
                 ->getAttributes();
 
@@ -142,5 +147,44 @@ class DemoStagiairesSeeder extends Seeder
             ['stagiaire_id' => $stagiaire->id, 'sujet' => $attributes['sujet']],
             $attributes
         );
+    }
+
+    private function seedDemandes(): void
+    {
+        $demandes = [
+            ['Kenza', 'Mansouri', 'DMF1001', 'CMC-D-001', 'kenza.mansouri@cmc.test', '0633333301', 'Fille', 'Developpement Digital'],
+            ['Lina', 'Tazi', 'DMF1002', 'CMC-D-002', 'lina.tazi@cmc.test', '0633333302', 'Fille', 'Infrastructure Digitale'],
+            ['Ilyass', 'Radi', 'DMG2001', 'CMC-D-003', 'ilyass.radi@cmc.test', '0644444401', 'Garcon', 'Developpement Digital'],
+            ['Adil', 'Mekki', 'DMG2002', 'CMC-D-004', 'adil.mekki@cmc.test', '0644444402', 'Garcon', 'Gestion des Entreprises'],
+        ];
+
+        foreach ($demandes as [$nom, $prenom, $cin, $numero, $email, $telephone, $genre, $filiere]) {
+            StagiaireCentre::updateOrCreate(
+                ['cin' => $cin],
+                [
+                    'nom' => $nom,
+                    'prenom' => $prenom,
+                    'numero_inscription' => $numero,
+                    'filiere' => $filiere,
+                    'genre' => $genre,
+                ]
+            );
+
+            $attributes = Demande::factory()
+                ->make([
+                    'nom' => $nom,
+                    'prenom' => $prenom,
+                    'cin' => $cin,
+                    'numero_inscription' => $numero,
+                    'email' => $email,
+                    'telephone' => $telephone,
+                    'genre' => $genre,
+                    'filiere' => $filiere,
+                    'statut' => 'en_attente',
+                ])
+                ->getAttributes();
+
+            Demande::updateOrCreate(['cin' => $cin], $attributes);
+        }
     }
 }

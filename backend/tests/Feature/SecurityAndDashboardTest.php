@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\{Chambre, Paiement, Presence, Reclamation, Sortie, Stagiaire, User};
+use App\Models\{Chambre, Paiement, Presence, Reclamation, Sortie, Stagiaire, StagiaireCentre, User};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\Sanctum;
@@ -102,5 +102,64 @@ class SecurityAndDashboardTest extends TestCase
                     '*' => ['type', 'title', 'message', 'count', 'tone', 'target'],
                 ],
             ]);
+    }
+
+    public function test_public_demande_requires_center_candidate_and_uses_center_data(): void
+    {
+        StagiaireCentre::create([
+            'nom' => 'Kenza',
+            'prenom' => 'Mansouri',
+            'cin' => 'DMF1001',
+            'numero_inscription' => 'CMC-D-001',
+            'filiere' => 'Developpement Digital',
+            'genre' => 'Fille',
+        ]);
+
+        $response = $this->postJson('/api/demandes', [
+            'nom' => 'Nom saisi',
+            'cin' => 'DMF1001',
+            'email' => 'kenza.demo@cmc.test',
+            'telephone' => '0633333301',
+            'genre' => 'Garcon',
+            'filiere' => 'Autre filiere',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('nom', 'Kenza')
+            ->assertJsonPath('prenom', 'Mansouri')
+            ->assertJsonPath('genre', 'Fille')
+            ->assertJsonPath('filiere', 'Developpement Digital');
+
+        $this->postJson('/api/demandes', [
+            'nom' => 'Inconnu',
+            'cin' => 'UNKNOWN',
+            'email' => 'unknown@cmc.test',
+            'telephone' => '0600000000',
+            'genre' => 'Fille',
+            'filiere' => 'Developpement Digital',
+        ])->assertForbidden();
+    }
+
+    public function test_paiement_creation_accepts_only_real_paid_records(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $room = Chambre::factory()->create(['category' => 'filles']);
+        $stagiaire = Stagiaire::factory()->filles()->create(['chambre_id' => $room->id]);
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson('/api/paiements', [
+            'stagiaire_id' => $stagiaire->id,
+            'mois' => 'Mai',
+            'montant' => 300,
+            'statut' => 'en_retard',
+        ])->assertUnprocessable();
+
+        $this->postJson('/api/paiements', [
+            'stagiaire_id' => $stagiaire->id,
+            'mois' => 'Mai',
+            'montant' => 300,
+        ])->assertSuccessful()
+            ->assertJsonPath('statut', 'paye');
     }
 }
