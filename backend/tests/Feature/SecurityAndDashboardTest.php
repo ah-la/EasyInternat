@@ -294,4 +294,36 @@ class SecurityAndDashboardTest extends TestCase
             'password_confirmation' => 'password123',
         ])->assertUnprocessable();
     }
+
+    public function test_chambre_validation_blocks_duplicates_over_capacity_and_occupied_delete(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        Sanctum::actingAs($admin);
+
+        $room = Chambre::factory()->create([
+            'numero' => 'F-777',
+            'category' => 'filles',
+            'capacite' => 4,
+        ]);
+
+        $this->postJson('/api/chambres', [
+            'numero' => 'F-777',
+            'etage' => '1ere etage',
+            'category' => 'filles',
+            'capacite' => 4,
+        ])->assertUnprocessable();
+
+        $this->postJson('/api/chambres', [
+            'numero' => 'F-778',
+            'etage' => '1ere etage',
+            'category' => 'filles',
+            'capacite' => 5,
+        ])->assertUnprocessable();
+
+        Stagiaire::factory()->filles()->create(['chambre_id' => $room->id]);
+
+        $this->deleteJson("/api/chambres/{$room->id}")
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Impossible de supprimer une chambre occupée.');
+    }
 }

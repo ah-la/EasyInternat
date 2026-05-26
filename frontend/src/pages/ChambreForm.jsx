@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, X } from 'lucide-react'
+import { ArrowLeft, Plus } from 'lucide-react'
+import { toast } from 'sonner'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
-import { filterStagiairesByRole, getCurrentRole, getRoleInfo } from '../lib/authRole.js'
+import { getCurrentRole, getRoleInfo } from '../lib/authRole.js'
 import { labelToCategory, store } from '../lib/store.js'
 
 const emptyForm = {
   numero: '',
   etage: 'Rez de chaussee',
   categorie: 'Filles',
-  capacite: 4
+  capacite: 4,
+  statut: 'Disponible'
 }
 
 export default function ChambreForm() {
   const { numero } = useParams()
   const navigate = useNavigate()
   const [rows, setRows] = useState([])
-  const [availableStagiaires, setAvailableStagiaires] = useState([])
   const role = getCurrentRole()
   const basePath = role === 'admin' ? '/admin' : '/responsable'
   const roleInfo = getRoleInfo(role)
@@ -25,61 +26,39 @@ export default function ChambreForm() {
   const [form, setForm] = useState(
     { ...emptyForm, categorie: lockedCategory || 'Filles' }
   )
-  const [stagiaireInput, setStagiaireInput] = useState('')
-  const [selectedStagiaires, setSelectedStagiaires] = useState([])
+  const [saving, setSaving] = useState(false)
   const isEditing = Boolean(numero)
 
   useEffect(() => {
-    Promise.all([store.getChambres(), store.getStagiaires()]).then(([chambres, stagiaires]) => {
+    store.getChambres().then((chambres) => {
       setRows(chambres)
-      setAvailableStagiaires(filterStagiairesByRole(stagiaires, role))
       const current = chambres.find((row) => row.id === numero)
       if (current) {
         setForm(current)
-        setSelectedStagiaires(current.stagiaires || [])
       }
     })
-  }, [numero, role])
-
-  const chooseRoom = (value) => {
-    const selected = rows.find((row) => row.numero === value)
-    if (selected) {
-      setForm({
-        numero: selected.numero,
-        etage: selected.etage,
-        categorie: lockedCategory || selected.categorie,
-        capacite: selected.capacite
-      })
-      setSelectedStagiaires(selected.stagiaires || [])
-      return
-    }
-    setForm({ ...form, numero: value })
-  }
-
-  const addStagiaire = () => {
-    const name = stagiaireInput.trim()
-    if (!name || selectedStagiaires.includes(name) || selectedStagiaires.length >= Number(form.capacite)) return
-    setSelectedStagiaires((currentList) => [...currentList, name])
-    setStagiaireInput('')
-  }
+  }, [numero])
 
   const submit = async (event) => {
     event.preventDefault()
-    const typedName = stagiaireInput.trim()
-    const names = [
-      ...selectedStagiaires,
-      ...(typedName && !selectedStagiaires.includes(typedName) ? [typedName] : [])
-    ].slice(0, Number(form.capacite))
+    setSaving(true)
     const payload = {
-      numero: form.numero,
+      numero: form.numero.trim(),
       etage: form.etage,
       category: labelToCategory(lockedCategory || form.categorie),
-      capacite: Number(form.capacite),
-      statut: names.length >= Number(form.capacite) ? 'complete' : 'disponible'
+      capacite: 4,
+      statut: String(form.statut || 'Disponible').toLowerCase()
     }
-    if (isEditing) await store.updateChambre(numero, payload)
-    else await store.createChambre(payload)
-    navigate(`${basePath}/chambres`)
+    try {
+      if (isEditing) await store.updateChambre(numero, payload)
+      else await store.createChambre(payload)
+      toast.success(isEditing ? 'Chambre modifiée avec succès.' : 'Chambre ajoutée avec succès.')
+      navigate(`${basePath}/chambres`)
+    } catch (error) {
+      toast.error(error.response?.data?.message || "La chambre n'a pas pu être enregistrée.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -87,7 +66,7 @@ export default function ChambreForm() {
       <div className="mb-5 flex items-start justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-primary">{isEditing ? 'Modifier une chambre' : 'Ajouter une chambre'}</h2>
-          <p className="text-sm text-muted">Ajoutez les stagiaires ligne par ligne. La chambre devient rouge quand elle atteint 4/4.</p>
+          <p className="text-sm text-muted">Creez la chambre proprement. L'affectation des stagiaires se fait depuis la gestion des stagiaires.</p>
         </div>
         <Button as={Link} to={`${basePath}/chambres`} variant="secondary">
           <ArrowLeft className="h-4 w-4" />
@@ -97,24 +76,16 @@ export default function ChambreForm() {
 
       <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
         <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-primary">Choisir chambre</span>
+          <span className="mb-2 block text-sm font-semibold text-primary">Numero chambre</span>
           <input
             required
             className="input"
-            list="chambres-options"
+            disabled={isEditing}
             placeholder="Tapez F01, FB1, G01..."
             value={form.numero}
-            onChange={(event) => chooseRoom(event.target.value)}
+            onChange={(event) => setForm({ ...form, numero: event.target.value })}
           />
-          <datalist id="chambres-options">
-            {rows
-              .filter((row) => !lockedCategory || row.categorie === lockedCategory)
-              .map((row) => (
-                <option key={row.numero} value={row.numero}>
-                  {row.numero} - {row.etage} - {row.categorie}
-                </option>
-              ))}
-          </datalist>
+          <span className="mt-1 block text-xs font-semibold text-muted">Numeros deja utilises: {rows.length}</span>
         </label>
         <label className="block">
           <span className="mb-2 block text-sm font-semibold text-primary">Etage</span>
@@ -133,57 +104,22 @@ export default function ChambreForm() {
         </label>
         <label className="block">
           <span className="mb-2 block text-sm font-semibold text-primary">Capacite</span>
-          <input required className="input" type="number" min="1" max="8" value={form.capacite} onChange={(event) => setForm({ ...form, capacite: event.target.value })} />
+          <select className="input" value="4" disabled>
+            <option value="4">4 stagiaires maximum</option>
+          </select>
         </label>
-        <label className="block md:col-span-2">
-          <span className="mb-2 block text-sm font-semibold text-primary">Stagiaires dans la chambre</span>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <input
-              className="input"
-              list="chambre-stagiaires-options"
-              placeholder="Tapez le nom du stagiaire..."
-              value={stagiaireInput}
-              onChange={(event) => setStagiaireInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault()
-                  addStagiaire()
-                }
-              }}
-            />
-            <Button type="button" onClick={addStagiaire}>
-              <Plus className="h-4 w-4" />
-              Ajouter
-            </Button>
-          </div>
-          <datalist id="chambre-stagiaires-options">
-            {availableStagiaires
-              .filter((stagiaire) => !selectedStagiaires.includes(stagiaire.nom))
-              .map((stagiaire) => (
-                <option key={stagiaire.id} value={stagiaire.nom} />
-              ))}
-          </datalist>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {selectedStagiaires.length ? selectedStagiaires.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => setSelectedStagiaires((currentList) => currentList.filter((item) => item !== name))}
-                className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-white px-2.5 text-xs font-semibold text-primary shadow-subtle"
-              >
-                {name}
-                <X className="h-3.5 w-3.5 text-muted" />
-              </button>
-            )) : (
-              <span className="text-sm text-muted">Aucun stagiaire ajoute.</span>
-            )}
-          </div>
+        <label className="block">
+          <span className="mb-2 block text-sm font-semibold text-primary">Statut</span>
+          <select className="input" value={form.statut} onChange={(event) => setForm({ ...form, statut: event.target.value })}>
+            <option>Disponible</option>
+            <option>Complete</option>
+          </select>
         </label>
 
         <div className="flex items-end gap-2 md:col-span-2">
-          <Button type="submit">
+          <Button type="submit" disabled={saving}>
             <Plus className="h-4 w-4" />
-            Enregistrer
+            {saving ? 'Enregistrement...' : 'Enregistrer'}
           </Button>
           <Button as={Link} to={`${basePath}/chambres`} variant="secondary">
             Annuler

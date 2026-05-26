@@ -90,6 +90,7 @@ const mapChambre = (row = {}) => {
     categorie: categoryToLabel(row.category),
     capacite: Number(row.capacite || 4),
     occupants,
+    places_libres: Math.max(0, Number(row.capacite || 4) - occupants),
     stagiaires: names,
     statut: occupants >= Number(row.capacite || 4) ? 'Complete' : 'Disponible'
   }

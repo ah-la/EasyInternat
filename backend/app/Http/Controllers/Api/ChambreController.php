@@ -54,8 +54,8 @@ class ChambreController extends Controller
             'numero' => 'required|string|max:50|unique:chambres,numero',
             'etage' => 'nullable|string|max:100',
             'category' => 'required|in:filles,garcons',
-            'capacite' => 'required|integer|min:1|max:8',
-            'statut' => 'nullable|string|max:50',
+            'capacite' => 'required|integer|min:1|max:4',
+            'statut' => 'nullable|in:disponible,complete',
         ]);
 
         if ($request->user()?->role === 'responsable' && $request->user()->category !== $data['category']) {
@@ -81,12 +81,16 @@ class ChambreController extends Controller
             'numero' => 'sometimes|string|max:50|unique:chambres,numero,'.$chambre->id,
             'etage' => 'nullable|string|max:100',
             'category' => 'sometimes|in:filles,garcons',
-            'capacite' => 'sometimes|integer|min:1|max:8',
-            'statut' => 'sometimes|string|max:50',
+            'capacite' => 'sometimes|integer|min:1|max:4',
+            'statut' => 'sometimes|in:disponible,complete',
         ]);
 
         if (isset($data['category']) && $request->user()?->role === 'responsable' && $request->user()->category !== $data['category']) {
             abort(403, 'Acces refuse pour cette categorie');
+        }
+
+        if (isset($data['capacite']) && $chambre->stagiaires()->count() > $data['capacite']) {
+            return response()->json(['message' => 'La capacite est inferieure au nombre de stagiaires affectes'], 422);
         }
 
         $chambre->update($data);
@@ -97,6 +101,10 @@ class ChambreController extends Controller
     public function destroy(Request $request, Chambre $chambre)
     {
         $this->ensureVisible($request, $chambre);
+        if ($chambre->stagiaires()->exists()) {
+            return response()->json(['message' => 'Impossible de supprimer une chambre occupée.'], 422);
+        }
+
         $chambre->delete();
         return response()->noContent();
     }
