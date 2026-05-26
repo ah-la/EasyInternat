@@ -35,28 +35,28 @@ export default function Stagiaires() {
       accessorKey: 'actions',
       header: 'Actions',
       cell: ({ row }) => (
-        <div className="flex flex-col items-start gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Link
             to={`${basePath}/stagiaires/${row.original.id}`}
-            className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-white px-2 text-xs font-semibold text-primary hover:border-secondary/50"
+            title="Voir profil"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-100 bg-white text-primary shadow-subtle transition hover:scale-105 hover:border-secondary/50 hover:bg-cyan-soft"
           >
-            <Eye className="h-3.5 w-3.5" />
-            Profil
+            <Eye className="h-4 w-4" />
           </Link>
           <Link
             to={`${basePath}/stagiaires/${row.original.id}/edit`}
-            className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-white px-2 text-xs font-semibold text-primary hover:border-secondary/50"
+            title="Modifier"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-100 bg-white text-primary shadow-subtle transition hover:scale-105 hover:border-secondary/50 hover:bg-cyan-soft"
           >
-            <Pencil className="h-3.5 w-3.5" />
-            Modifier
+            <Pencil className="h-4 w-4" />
           </Link>
           <button
             type="button"
             onClick={() => deleteRow(row.original.id)}
-            className="inline-flex h-8 items-center gap-1 rounded-lg border border-red-100 bg-white px-2 text-xs font-semibold text-danger hover:bg-red-50"
+            title="Supprimer"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-white text-danger shadow-subtle transition hover:scale-105 hover:bg-red-50"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            Supprimer
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
       )

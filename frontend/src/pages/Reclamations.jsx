@@ -44,10 +44,10 @@ export default function Reclamations() {
         <button
           type="button"
           onClick={() => answerReclamation(row.original)}
-          className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-white px-2 text-xs font-semibold text-primary hover:border-secondary/50"
+          title="Repondre"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-100 bg-white text-primary shadow-subtle transition hover:scale-105 hover:bg-cyan-soft"
         >
-          <MessageSquareReply className="h-3.5 w-3.5" />
-          Repondre
+          <MessageSquareReply className="h-4 w-4" />
         </button>
       )
     }

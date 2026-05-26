@@ -73,10 +73,10 @@ export default function Chambres() {
         <button
           type="button"
           onClick={() => setExpanded((current) => (current === row.original.numero ? null : row.original.numero))}
-          className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-white px-2 text-xs font-semibold text-primary hover:border-secondary/50"
+          title="Voir les stagiaires"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-100 bg-white text-primary shadow-subtle transition hover:scale-105 hover:bg-cyan-soft"
         >
-          {expanded === row.original.numero ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
-          Voir
+          {expanded === row.original.numero ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       )
     },
@@ -91,10 +91,10 @@ export default function Chambres() {
       cell: ({ row }) => (
         <Link
           to={`${basePath}/chambres/${row.original.id}/edit`}
-          className="inline-flex h-8 items-center gap-1 rounded-lg border border-border bg-white px-2 text-xs font-semibold text-primary hover:border-secondary/50"
+          title="Modifier"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-sky-100 bg-white text-primary shadow-subtle transition hover:scale-105 hover:bg-cyan-soft"
         >
-          <Pencil className="h-3.5 w-3.5" />
-          Modifier
+          <Pencil className="h-4 w-4" />
         </Link>
       )
     }

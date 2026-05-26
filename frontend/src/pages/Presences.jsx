@@ -37,22 +37,22 @@ export default function Presences() {
       accessorKey: 'actions',
       header: 'Actions',
       cell: ({ row }) => (
-        <div className="flex flex-col items-start gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
             onClick={() => updateStatus(row.original.id, 'Validee')}
-            className="inline-flex h-8 items-center gap-1 rounded-lg border border-green-100 bg-white px-2 text-xs font-semibold text-success hover:bg-green-50"
+            title="Valider"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-green-100 bg-white text-success shadow-subtle transition hover:scale-105 hover:bg-green-50"
           >
-            <Check className="h-3.5 w-3.5" />
-            Valider
+            <Check className="h-4 w-4" />
           </button>
           <button
             type="button"
             onClick={() => updateStatus(row.original.id, 'Refusee')}
-            className="inline-flex h-8 items-center gap-1 rounded-lg border border-red-100 bg-white px-2 text-xs font-semibold text-danger hover:bg-red-50"
+            title="Refuser"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 bg-white text-danger shadow-subtle transition hover:scale-105 hover:bg-red-50"
           >
-            <X className="h-3.5 w-3.5" />
-            Refuser
+            <X className="h-4 w-4" />
           </button>
         </div>
       )
