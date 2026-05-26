@@ -1,11 +1,14 @@
 import {
   AlertTriangle,
   BedDouble,
+  Bell,
   CreditCard,
   FileCheck2,
+  MessageSquareWarning,
   UsersRound
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { motion } from 'framer-motion'
@@ -18,6 +21,14 @@ import { filterStagiairesByRole, getCurrentRole, getRoleInfo } from '../../lib/a
 import { store } from '../../lib/store.js'
 
 const statIcons = [UsersRound, BedDouble, FileCheck2, AlertTriangle]
+
+const notificationIcons = {
+  demande: FileCheck2,
+  reclamation: MessageSquareWarning,
+  paiement: CreditCard,
+  absence: AlertTriangle,
+  sortie: Bell
+}
 
 const tableColumns = {
   stagiaires: [
@@ -85,6 +96,8 @@ export default function Dashboard() {
   const visibleSorties = roleInfo.gender ? allSorties.filter((sortie) => sortie.genre === roleInfo.gender) : allSorties
   const pendingDemandes = allDemandes.filter((demande) => demande.statut === 'En attente')
   const latePayments = visiblePaiements.filter((paiement) => paiement.statut !== 'Paye')
+  const notifications = summary.notifications || []
+  const basePath = role === 'admin' ? '/admin' : '/responsable'
 
   const dashboardStats = [
     {
@@ -183,6 +196,43 @@ export default function Dashboard() {
           </div>
         </Card>
       </div>
+
+      <Card className="min-w-0 rounded-3xl p-6 shadow-[0_22px_55px_rgba(7,59,92,0.08)]">
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xl font-black text-primary">Notifications</h2>
+            <p className="text-sm font-semibold text-muted">Demandes, reclamations, paiements et absences a suivre</p>
+          </div>
+          <Badge tone="info">{notifications.length} alertes</Badge>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          {notifications.map((item, index) => {
+            const Icon = notificationIcons[item.type] || Bell
+            return (
+              <motion.div
+                key={item.type}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: index * 0.04 }}
+              >
+                <Link
+                  to={`${basePath}/${item.target}`}
+                  className="block h-full rounded-2xl border border-sky-100 bg-white p-4 shadow-subtle transition hover:-translate-y-0.5 hover:border-secondary/40 hover:shadow-soft"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="grid h-11 w-11 place-items-center rounded-2xl bg-cyan-soft text-primary">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <Badge tone={item.tone}>{item.count}</Badge>
+                  </div>
+                  <h3 className="mt-4 text-sm font-black text-primary">{item.title}</h3>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-muted">{item.message}</p>
+                </Link>
+              </motion.div>
+            )
+          })}
+        </div>
+      </Card>
 
       <div className="grid min-w-0 gap-7 xl:grid-cols-2">
         <DataTable title="Stagiaires recents" columns={tableColumns.stagiaires} rows={visibleStagiaires.slice(0, 4)} loading={loading} />
