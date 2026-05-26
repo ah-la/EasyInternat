@@ -22,6 +22,7 @@ import { getCurrentRole, getHomePath, isAuthenticated } from '../lib/authRole.js
 
 const requestSchema = z.object({
   nom: z.string().min(2, 'Nom obligatoire'),
+  prenom: z.string().min(2, 'Prenom obligatoire'),
   cin: z.string().min(5, 'CIN obligatoire'),
   numero_inscription: z.string().min(2, "Numéro d'inscription CMC obligatoire"),
   email: z.string().email('Email invalide'),
@@ -75,6 +76,7 @@ function AuthPanel() {
   } = useForm({
     defaultValues: {
       nom: '',
+      prenom: '',
       cin: '',
       numero_inscription: '',
       email: '',
@@ -109,6 +111,7 @@ function AuthPanel() {
       try {
         const formData = new FormData()
         formData.append('nom', values.nom)
+        formData.append('prenom', values.prenom)
         formData.append('cin', values.cin)
         formData.append('numero_inscription', values.numero_inscription)
         formData.append('email', values.email)
@@ -174,16 +177,19 @@ function AuthPanel() {
               {isRequest ? (
                 <>
                   <div className="grid gap-3 sm:grid-cols-2">
-                    <Field icon={UserRound} label="Nom complet" placeholder="Votre nom" {...register('nom')} error={errors.nom} />
-                    <Field icon={FileText} label="CIN" placeholder="A8123456" {...register('cin')} error={errors.cin} />
+                    <Field icon={UserRound} label="Nom" placeholder="Votre nom" {...register('nom')} error={errors.nom} />
+                    <Field icon={UserRound} label="Prenom" placeholder="Votre prenom" {...register('prenom')} error={errors.prenom} />
                   </div>
-                  <Field
-                    icon={FileText}
-                    label="Numero d'inscription CMC"
-                    placeholder="CMC-D-001"
-                    {...register('numero_inscription')}
-                    error={errors.numero_inscription}
-                  />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <Field icon={FileText} label="CIN" placeholder="A8123456" {...register('cin')} error={errors.cin} />
+                    <Field
+                      icon={FileText}
+                      label="Numero d'inscription CMC"
+                      placeholder="CMC-D-001"
+                      {...register('numero_inscription')}
+                      error={errors.numero_inscription}
+                    />
+                  </div>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Field icon={Mail} label="Email" type="email" placeholder="votre@email.com" {...register('email')} error={errors.email} />
                     <Field icon={Phone} label="Telephone" placeholder="06XXXXXXXX" {...register('telephone')} error={errors.telephone} />

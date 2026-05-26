@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Clock3, Copy, Eye, FileText, KeyRound, Loader2, ShieldCheck, X } from 'lucide-react'
+import { Check, Clock3, Copy, Eye, FileText, KeyRound, Loader2, Phone, X } from 'lucide-react'
 import { toast } from 'sonner'
 import DataTable from '../components/DataTable.jsx'
 import Badge, { statusTone } from '../components/ui/Badge.jsx'
@@ -187,7 +187,7 @@ export default function Demandes() {
     try {
       const { data } = await store.acceptDemande(demande.id, payload)
       setRowStatus(demande.id, 'Acceptée', 'acceptee')
-      toast.success(`Demande acceptée. Compte: ${data.email}${payload.password ? ` / Code: ${payload.password}` : ''}`)
+      toast.success(`Demande acceptée. Compte créé: ${data.email}${payload.password ? ` / Code: ${payload.password}` : ''}`)
       setDecision(null)
     } catch (error) {
       toast.error(error.response?.data?.message || "La demande n'a pas pu être acceptée.")
@@ -201,7 +201,7 @@ export default function Demandes() {
     try {
       await store.refuseDemande(demande.id, motif)
       setRowStatus(demande.id, 'Refusée', 'refusee')
-      toast.success(`Demande refusée. Motif envoyé à ${demande.email}.`)
+      toast.success('Demande refusée avec motif enregistré.')
       setDecision(null)
     } catch (error) {
       toast.error(error.response?.data?.message || "La demande n'a pas pu être refusée.")
@@ -249,22 +249,28 @@ export default function Demandes() {
   }
 
   const columns = useMemo(() => [
-    { accessorKey: 'id', header: 'Ref.' },
-    { accessorKey: 'date', header: 'Date demande' },
-    { accessorKey: 'nom', header: 'Stagiaire' },
-    { accessorKey: 'cin', header: 'CIN' },
-    { accessorKey: 'telephone', header: 'Telephone' },
-    { accessorKey: 'filiere', header: 'Filiere' },
-    { accessorKey: 'genre', header: 'Genre' },
     {
-      accessorKey: 'verification',
-      header: 'Vérification centre',
+      accessorKey: 'id',
+      header: 'Ref.',
+      cell: ({ getValue }) => <span className="font-black text-primary">{getValue()}</span>
+    },
+    { accessorKey: 'date', header: 'Date demande' },
+    {
+      accessorKey: 'nom',
+      header: 'Stagiaire',
       cell: ({ row }) => (
-        <Badge tone={row.original.isVerified ? 'success' : 'danger'}>
-          {row.original.isVerified ? 'Vérifié CMC' : 'Non vérifié'}
-        </Badge>
+        <div className="min-w-[150px] space-y-1">
+          <p className="font-black text-primary">{row.original.nom}</p>
+          <p className="text-xs font-semibold text-muted">CIN {row.original.cin}</p>
+          <p className="inline-flex items-center gap-1 text-xs font-semibold text-muted">
+            <Phone className="h-3 w-3" />
+            {row.original.telephone}
+          </p>
+        </div>
       )
     },
+    { accessorKey: 'filiere', header: 'Filiere' },
+    { accessorKey: 'genre', header: 'Genre' },
     {
       accessorKey: 'certificat',
       header: 'Certificat',
@@ -293,7 +299,7 @@ export default function Demandes() {
         const isBusy = actionLoading.startsWith(`${demande.id}:`)
 
         return (
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-nowrap items-center gap-2">
             <button
               type="button"
               onClick={() => setDecision({ type: 'accept', demande })}
@@ -384,7 +390,7 @@ export default function Demandes() {
             <div className="mb-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-cyan-soft text-primary">
-                  {certificate.missing ? <ShieldCheck className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                  <FileText className="h-5 w-5" />
                 </span>
                 <div>
                   <h2 className="text-lg font-black text-primary">{certificate.title}</h2>

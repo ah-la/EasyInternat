@@ -74,8 +74,6 @@ const mapDemande = (row = {}) => ({
   statut_api: row.statut || 'en_attente',
   statut: demandeStatusLabel(row.statut),
   date: row.created_at ? String(row.created_at).slice(0, 10) : '',
-  verification: row.numero_inscription ? 'Vérifié CMC' : 'Non vérifié',
-  isVerified: Boolean(row.numero_inscription),
   certificat: row.certificat_residence || row.certificat || '',
   certificat_url: row.certificat_residence ? `/demandes/${row.id}/certificat` : ''
 })
