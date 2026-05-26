@@ -322,8 +322,37 @@ class SecurityAndDashboardTest extends TestCase
 
         Stagiaire::factory()->filles()->create(['chambre_id' => $room->id]);
 
+        $this->putJson("/api/chambres/{$room->id}", [
+            'category' => 'garcons',
+        ])->assertUnprocessable();
+
         $this->deleteJson("/api/chambres/{$room->id}")
             ->assertUnprocessable()
             ->assertJsonPath('message', 'Impossible de supprimer une chambre occupée.');
+    }
+
+    public function test_stagiaire_transfer_respects_category_and_room_capacity(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $fillesRoom = Chambre::factory()->create(['category' => 'filles', 'capacite' => 4]);
+        $garconsRoom = Chambre::factory()->create(['category' => 'garcons', 'capacite' => 4]);
+        $fullRoom = Chambre::factory()->create(['category' => 'filles', 'capacite' => 1]);
+        $stagiaire = Stagiaire::factory()->filles()->create(['chambre_id' => $fillesRoom->id]);
+        Stagiaire::factory()->filles()->create(['chambre_id' => $fullRoom->id]);
+
+        Sanctum::actingAs($admin);
+
+        $this->putJson("/api/stagiaires/{$stagiaire->id}", [
+            'chambre_id' => $garconsRoom->id,
+        ])->assertUnprocessable();
+
+        $this->putJson("/api/stagiaires/{$stagiaire->id}", [
+            'chambre_id' => $fullRoom->id,
+        ])->assertUnprocessable();
+
+        $this->putJson("/api/stagiaires/{$stagiaire->id}", [
+            'chambre_id' => null,
+        ])->assertOk()
+            ->assertJsonPath('chambre_id', null);
     }
 }

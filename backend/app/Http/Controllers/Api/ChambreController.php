@@ -89,6 +89,10 @@ class ChambreController extends Controller
             abort(403, 'Acces refuse pour cette categorie');
         }
 
+        if (isset($data['category']) && $data['category'] !== $chambre->category && $chambre->stagiaires()->exists()) {
+            return response()->json(['message' => 'Impossible de modifier la categorie d une chambre occupee'], 422);
+        }
+
         if (isset($data['capacite']) && $chambre->stagiaires()->count() > $data['capacite']) {
             return response()->json(['message' => 'La capacite est inferieure au nombre de stagiaires affectes'], 422);
         }

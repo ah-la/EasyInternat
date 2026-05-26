@@ -27,6 +27,7 @@ export default function ChambreForm() {
     { ...emptyForm, categorie: lockedCategory || 'Filles' }
   )
   const [saving, setSaving] = useState(false)
+  const [isOccupied, setIsOccupied] = useState(false)
   const isEditing = Boolean(numero)
 
   useEffect(() => {
@@ -35,6 +36,7 @@ export default function ChambreForm() {
       const current = chambres.find((row) => row.id === numero)
       if (current) {
         setForm(current)
+        setIsOccupied(Number(current.occupants || 0) > 0)
       }
     })
   }, [numero])
@@ -97,10 +99,16 @@ export default function ChambreForm() {
         </label>
         <label className="block">
           <span className="mb-2 block text-sm font-semibold text-primary">Categorie</span>
-          <select className="input" value={lockedCategory || form.categorie} disabled={Boolean(lockedCategory)} onChange={(event) => setForm({ ...form, categorie: event.target.value })}>
+          <select
+            className="input"
+            value={lockedCategory || form.categorie}
+            disabled={Boolean(lockedCategory) || isOccupied}
+            onChange={(event) => setForm({ ...form, categorie: event.target.value })}
+          >
             <option>Filles</option>
             <option>Garcons</option>
           </select>
+          {isOccupied ? <span className="mt-1 block text-xs font-semibold text-muted">Categorie verrouillee car la chambre contient des stagiaires.</span> : null}
         </label>
         <label className="block">
           <span className="mb-2 block text-sm font-semibold text-primary">Capacite</span>

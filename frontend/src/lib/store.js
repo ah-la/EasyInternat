@@ -79,7 +79,8 @@ const mapDemande = (row = {}) => ({
 })
 
 const mapChambre = (row = {}) => {
-  const names = (row.stagiaires || []).map((stagiaire) => fullName(stagiaire))
+  const stagiaireRows = row.stagiaires || []
+  const names = stagiaireRows.map((stagiaire) => fullName(stagiaire))
   const occupants = row.stagiaires_count ?? names.length
 
   return {
@@ -92,6 +93,14 @@ const mapChambre = (row = {}) => {
     occupants,
     places_libres: Math.max(0, Number(row.capacite || 4) - occupants),
     stagiaires: names,
+    occupantDetails: stagiaireRows.map((stagiaire) => ({
+      id: String(stagiaire.id),
+      nom: fullName(stagiaire),
+      cin: stagiaire.cin || '',
+      genre: stagiaire.genre || categoryToGenre(stagiaire.category),
+      category: stagiaire.category || row.category,
+      chambre_id: stagiaire.chambre_id || row.id
+    })),
     statut: occupants >= Number(row.capacite || 4) ? 'Complete' : 'Disponible'
   }
 }

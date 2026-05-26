@@ -22,10 +22,12 @@ function DecisionModal({ decision, chambres, busy, onClose, onAccept, onRefuse }
 
   useEffect(() => {
     if (!decision) return
-    setChambreId('')
+    const category = genreToCategory(decision.demande.genre)
+    const suggested = chambres.find((chambre) => chambre.category === category && Number(chambre.occupants || 0) < Number(chambre.capacite || 4))
+    setChambreId(decision.type === 'accept' && suggested ? suggested.id : '')
     setPassword(generatePassword())
     setMotif('')
-  }, [decision])
+  }, [chambres, decision])
 
   if (!decision) return null
 
