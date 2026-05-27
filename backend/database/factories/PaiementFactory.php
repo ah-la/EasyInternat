@@ -15,6 +15,8 @@ class PaiementFactory extends Factory
             'mois' => fake()->randomElement(['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai']),
             'montant' => 300,
             'statut' => 'paye',
+            'mode_paiement' => 'Especes',
+            'numero_recu' => null,
             'date_paiement' => fake()->dateTimeBetween('-4 months', 'now'),
         ];
     }

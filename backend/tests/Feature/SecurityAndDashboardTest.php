@@ -241,14 +241,28 @@ class SecurityAndDashboardTest extends TestCase
             'mois' => 'Mai',
             'montant' => 300,
             'statut' => 'en_retard',
+            'mode_paiement' => 'Especes',
+            'date_paiement' => now()->toDateString(),
         ])->assertUnprocessable();
 
         $this->postJson('/api/paiements', [
             'stagiaire_id' => $stagiaire->id,
             'mois' => 'Mai',
             'montant' => 300,
+            'mode_paiement' => 'Especes',
+            'numero_recu' => 'RC-001',
+            'date_paiement' => now()->toDateString(),
         ])->assertSuccessful()
             ->assertJsonPath('statut', 'paye');
+
+        $this->postJson('/api/paiements', [
+            'stagiaire_id' => $stagiaire->id,
+            'mois' => 'Mai',
+            'montant' => 300,
+            'mode_paiement' => 'Especes',
+            'date_paiement' => now()->toDateString(),
+        ])->assertUnprocessable()
+            ->assertJsonPath('message', 'Ce mois est deja paye pour ce stagiaire');
     }
 
     public function test_stagiaire_creation_creates_account_and_blocks_full_room(): void

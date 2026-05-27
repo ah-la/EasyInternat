@@ -9,7 +9,7 @@ class Paiement extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['stagiaire_id', 'mois', 'montant', 'statut', 'date_paiement'];
+    protected $fillable = ['stagiaire_id', 'mois', 'montant', 'statut', 'mode_paiement', 'numero_recu', 'date_paiement'];
 
     public function stagiaire()
     {

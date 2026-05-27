@@ -43,6 +43,7 @@ export default function App() {
             <Route path="chambres/:numero/edit" element={<ChambreForm />} />
             <Route path="paiements" element={<Paiements />} />
             <Route path="paiements/new" element={<PaiementForm />} />
+            <Route path="paiements/:id/edit" element={<PaiementForm />} />
             <Route path="sorties" element={<Sorties />} />
             <Route path="reclamations" element={<Reclamations />} />
             <Route path="responsables" element={<Responsables />} />
@@ -64,6 +65,7 @@ export default function App() {
             <Route path="chambres/:numero/edit" element={<ChambreForm />} />
             <Route path="paiements" element={<Paiements />} />
             <Route path="paiements/new" element={<PaiementForm />} />
+            <Route path="paiements/:id/edit" element={<PaiementForm />} />
             <Route path="sorties" element={<Sorties />} />
             <Route path="reclamations" element={<Reclamations />} />
           </Route>

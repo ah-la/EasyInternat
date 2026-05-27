@@ -112,8 +112,11 @@ const mapPaiement = (row = {}) => ({
   stagiaire_id: row.stagiaire_id || row.stagiaire?.id || '',
   chambre: row.stagiaire?.chambre?.numero || '',
   categorie: categoryToLabel(row.stagiaire?.category || row.category),
+  montant_value: Number(row.montant || 0),
   montant: `${Number(row.montant || 0)} DH`,
   statut: row.statut === 'paye' ? 'Paye' : row.statut === 'en_retard' ? 'En retard' : 'Non paye',
+  mode_paiement: row.mode_paiement || 'Especes',
+  numero_recu: row.numero_recu || '',
   date: row.date_paiement || ''
 })
 
@@ -183,6 +186,7 @@ export const store = {
   getPaiements: (params) => list('/paiements', mapPaiement, params),
   createPaiement: async (payload) => mapPaiement((await api.post('/paiements', payload)).data),
   updatePaiement: async (id, payload) => mapPaiement((await api.put(`/paiements/${id}`, payload)).data),
+  deletePaiement: (id) => api.delete(`/paiements/${id}`),
 
   getSorties: (params) => list('/sorties', mapSortie, params),
   createSortie: async (payload) => mapSortie((await api.post('/sorties', payload)).data),
