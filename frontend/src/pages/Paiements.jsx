@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Banknote, Eye, Pencil, Plus, ReceiptText, Trash2, TrendingUp, UsersRound, WalletCards, X } from 'lucide-react'
+import { Banknote, Eye, Pencil, Plus, ReceiptText, SearchX, Trash2, TrendingUp, UsersRound, WalletCards, X } from 'lucide-react'
 import { toast } from 'sonner'
 import DataTable from '../components/DataTable.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -30,7 +30,7 @@ function PaiementModal({ paiement, onClose }) {
               <ReceiptText className="h-6 w-6" />
             </span>
             <div>
-              <h2 className="text-lg font-black text-primary">Recu paiement</h2>
+              <h2 className="text-lg font-black text-primary">Detail paiement</h2>
               <p className="mt-1 text-sm font-semibold text-muted">{paiement.stagiaire}</p>
             </div>
           </div>
@@ -49,8 +49,6 @@ function PaiementModal({ paiement, onClose }) {
             ['Mois', paiement.mois],
             ['Montant', paiement.montant],
             ['Date', paiement.date || '-'],
-            ['Mode', paiement.mode_paiement || '-'],
-            ['Numero recu', paiement.numero_recu || '-'],
             ['Chambre', paiement.chambre || '-']
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-sky-100 bg-slate-50 p-4">
@@ -64,13 +62,53 @@ function PaiementModal({ paiement, onClose }) {
   )
 }
 
+function RetardsModal({ stagiaires, month, onClose }) {
+  const rows = stagiaires.filter((stagiaire) => stagiaire.payment_status === 'en_retard' || stagiaire.payment_status === 'a_payer')
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/35 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-2xl rounded-3xl border border-sky-100 bg-white p-5 shadow-[0_24px_70px_rgba(7,59,92,0.22)]">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-amber-50 text-amber-700">
+              <SearchX className="h-6 w-6" />
+            </span>
+            <div>
+              <h2 className="text-lg font-black text-primary">Retards paiement</h2>
+              <p className="mt-1 text-sm font-semibold text-muted">Stagiaires qui n'ont pas paye {month}</p>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-sky-100 bg-white text-primary shadow-subtle transition hover:bg-cyan-soft" title="Fermer">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="max-h-[60vh] space-y-2 overflow-auto">
+          {rows.length ? rows.map((stagiaire) => (
+            <div key={stagiaire.id} className="grid gap-2 rounded-2xl border border-sky-100 bg-slate-50 p-4 sm:grid-cols-4">
+              <p className="font-black text-primary sm:col-span-2">{stagiaire.nom}</p>
+              <p className="text-sm font-semibold text-muted">{stagiaire.chambre || '-'}</p>
+              <Badge>{stagiaire.paiement}</Badge>
+            </div>
+          )) : (
+            <div className="rounded-2xl border border-sky-100 bg-slate-50 p-6 text-center text-sm font-semibold text-muted">
+              Aucun retard pour ce mois.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Paiements() {
   const [rows, setRows] = useState([])
   const [stagiaires, setStagiaires] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ category: '', chambre: '', mois: '', date: '' })
+  const [filters, setFilters] = useState({ category: '', mois: '' })
   const [selected, setSelected] = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  const [showRetards, setShowRetards] = useState(false)
   const role = getCurrentRole()
   const basePath = role === 'admin' ? '/admin' : '/responsable'
 
@@ -98,7 +136,7 @@ export default function Paiements() {
       .reduce((sum, row) => sum + Number(row.montant_value || 0), 0)
     const payes = rows.length
     const retard = stagiaires.filter((stagiaire) => stagiaire.payment_status === 'en_retard').length
-    const nonPayes = stagiaires.filter((stagiaire) => stagiaire.payment_status === 'non_paye').length
+    const nonPayes = stagiaires.filter((stagiaire) => ['non_paye', 'a_payer'].includes(stagiaire.payment_status)).length
     return { totalMonth, payes, retard, nonPayes }
   }, [rows, stagiaires])
 
@@ -125,8 +163,6 @@ export default function Paiements() {
       cell: ({ getValue }) => <Badge className={categoryClass(getValue())}>{getValue()}</Badge>
     },
     { accessorKey: 'montant', header: 'Montant' },
-    { accessorKey: 'mode_paiement', header: 'Mode' },
-    { accessorKey: 'numero_recu', header: 'Recu' },
     { accessorKey: 'statut', header: 'Statut' },
     { accessorKey: 'date', header: 'Date paiement' },
     {
@@ -212,29 +248,26 @@ export default function Paiements() {
                 <option value="garcons">Garcons</option>
               </select>
             ) : null}
-            <input
-              value={filters.chambre}
-              onChange={(event) => setFilters((current) => ({ ...current, chambre: event.target.value }))}
-              placeholder="Chambre"
-              className="h-10 w-28 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
-            />
-            <input
+            <select
               value={filters.mois}
               onChange={(event) => setFilters((current) => ({ ...current, mois: event.target.value }))}
-              placeholder="Mois"
-              className="h-10 w-28 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
-            />
-            <input
-              type="date"
-              value={filters.date}
-              onChange={(event) => setFilters((current) => ({ ...current, date: event.target.value }))}
-              className="h-10 rounded-lg border border-border px-3 text-sm outline-none focus:border-secondary"
-            />
+              className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
+            >
+              <option value="">Tous les mois</option>
+              {['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre'].map((month) => (
+                <option key={month} value={month}>{month}</option>
+              ))}
+            </select>
+            <Button type="button" variant="secondary" onClick={() => setShowRetards(true)}>
+              <SearchX className="h-4 w-4" />
+              Afficher retards
+            </Button>
           </div>
         }
       />
 
       <PaiementModal paiement={selected} onClose={() => setSelected(null)} />
+      {showRetards ? <RetardsModal stagiaires={stagiaires} month={currentMonthName} onClose={() => setShowRetards(false)} /> : null}
 
       <ConfirmDialog
         open={Boolean(deleteTarget)}

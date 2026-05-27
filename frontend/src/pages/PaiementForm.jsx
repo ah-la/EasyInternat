@@ -8,7 +8,6 @@ import { filterStagiairesByRole, getCurrentRole } from '../lib/authRole.js'
 import { store } from '../lib/store.js'
 
 const months = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre']
-const paymentModes = ['Especes', 'Virement', 'Cheque', 'Autre']
 
 function stagiaireLabel(stagiaire) {
   return `${stagiaire.nom} - ${stagiaire.chambre || '-'} - ${stagiaire.categorie}`
@@ -28,10 +27,8 @@ export default function PaiementForm() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     stagiaire_id: '',
-    montant: 300,
-    date: new Date().toISOString().slice(0, 10),
-    mode_paiement: 'Especes',
-    numero_recu: ''
+    montant: 200,
+    date: new Date().toISOString().slice(0, 10)
   })
 
   useEffect(() => {
@@ -45,10 +42,8 @@ export default function PaiementForm() {
         setSelectedMonths([current.mois])
         setForm({
           stagiaire_id: current.stagiaire_id,
-          montant: current.montant_value || Number(String(current.montant).replace(/[^\d.]/g, '')) || 300,
-          date: current.date || new Date().toISOString().slice(0, 10),
-          mode_paiement: current.mode_paiement || 'Especes',
-          numero_recu: current.numero_recu || ''
+          montant: current.montant_value || Number(String(current.montant).replace(/[^\d.]/g, '')) || 200,
+          date: current.date || new Date().toISOString().slice(0, 10)
         })
         setSearch(stagiaireLabel(visible.find((stagiaire) => String(stagiaire.id) === String(current.stagiaire_id)) || { nom: current.stagiaire, chambre: current.chambre, categorie: current.categorie }))
         return
@@ -116,8 +111,6 @@ export default function PaiementForm() {
         stagiaire_id: form.stagiaire_id,
         montant: Number(form.montant) || 0,
         statut: 'paye',
-        mode_paiement: form.mode_paiement,
-        numero_recu: form.numero_recu || null,
         date_paiement: form.date
       }
 
@@ -223,24 +216,24 @@ export default function PaiementForm() {
           <span className="mb-2 block text-sm font-semibold text-primary">Date paiement</span>
           <input required className="input" type="date" value={form.date} onChange={(event) => setForm({ ...form, date: event.target.value })} />
         </label>
-        <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-primary">Mode paiement</span>
-          <select className="input" value={form.mode_paiement} onChange={(event) => setForm({ ...form, mode_paiement: event.target.value })}>
-            {paymentModes.map((mode) => <option key={mode}>{mode}</option>)}
-          </select>
-        </label>
-        <label className="block">
-          <span className="mb-2 block text-sm font-semibold text-primary">Numero recu</span>
-          <input className="input" placeholder="Optionnel" value={form.numero_recu} onChange={(event) => setForm({ ...form, numero_recu: event.target.value })} />
-        </label>
 
         <div className="rounded-xl border border-sky-100 bg-cyan-soft/60 p-4 text-sm font-semibold text-primary md:col-span-2">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <span>Ce formulaire ajoute uniquement les paiements encaisses. Les retards sont calcules automatiquement.</span>
-            <span className="inline-flex items-center gap-2 rounded-xl bg-white px-3 py-2 font-black shadow-subtle">
-              <ReceiptText className="h-4 w-4" />
-              Total = {total} DH
-            </span>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div>
+              <p className="text-xs font-black uppercase text-muted">Mois selectionnes</p>
+              <p className="font-black">{selectedMonths.length ? selectedMonths.join(', ') : '-'}</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase text-muted">Montant par mois</p>
+              <p className="font-black">{Number(form.montant) || 0} DH</p>
+            </div>
+            <div>
+              <p className="text-xs font-black uppercase text-muted">Total a enregistrer</p>
+              <p className="inline-flex items-center gap-2 font-black">
+                <ReceiptText className="h-4 w-4" />
+                {total} DH
+              </p>
+            </div>
           </div>
           {selectedStagiaire ? (
             <p className="mt-2 text-xs text-muted">Selection: {stagiaireLabel(selectedStagiaire)}</p>

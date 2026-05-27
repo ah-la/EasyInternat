@@ -65,8 +65,6 @@ class PaiementController extends Controller
             'mois' => 'required|string|max:255',
             'montant' => 'required|numeric|min:0',
             'statut' => 'nullable|in:paye',
-            'mode_paiement' => 'required|in:Especes,Virement,Cheque,Autre',
-            'numero_recu' => 'nullable|string|max:100',
             'date_paiement' => 'required|date',
         ]);
 
@@ -101,8 +99,6 @@ class PaiementController extends Controller
             'mois' => 'sometimes|string|max:255',
             'montant' => 'sometimes|numeric|min:0',
             'statut' => 'sometimes|in:paye',
-            'mode_paiement' => 'sometimes|required|in:Especes,Virement,Cheque,Autre',
-            'numero_recu' => 'nullable|string|max:100',
             'date_paiement' => 'sometimes|required|date',
         ]);
 
@@ -116,11 +112,11 @@ class PaiementController extends Controller
             return response()->json(['message' => 'Ce mois est deja paye pour ce stagiaire'], 422);
         }
 
-        $before = $paiement->only(['stagiaire_id', 'mois', 'montant', 'statut', 'mode_paiement', 'numero_recu', 'date_paiement']);
+        $before = $paiement->only(['stagiaire_id', 'mois', 'montant', 'statut', 'date_paiement']);
         $paiement->update($data);
         ActionHistory::record($request->user(), 'paiement_updated', $paiement, 'Paiement modifie', [
             'before' => $before,
-            'after' => $paiement->only(['stagiaire_id', 'mois', 'montant', 'statut', 'mode_paiement', 'numero_recu', 'date_paiement']),
+            'after' => $paiement->only(['stagiaire_id', 'mois', 'montant', 'statut', 'date_paiement']),
         ]);
 
         return $paiement->load('stagiaire.chambre');
