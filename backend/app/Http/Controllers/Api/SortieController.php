@@ -36,7 +36,13 @@ class SortieController extends Controller
         }
 
         if ($request->filled('statut')) {
-            $query->where('statut', $request->statut);
+            if ($request->statut === 'retard') {
+                $query->where('statut', 'sorti')->whereDate('date_retour', '<', today());
+            } elseif ($request->statut === 'sorti') {
+                $query->where('statut', 'sorti')->whereDate('date_retour', '>=', today());
+            } else {
+                $query->where('statut', $request->statut);
+            }
         }
 
         if ($request->filled('date')) {
@@ -66,7 +72,7 @@ class SortieController extends Controller
             return response()->json(['message' => 'Compte stagiaire introuvable'], 404);
         }
 
-        return Sortie::create($data + ['statut' => 'en_attente'])->load('stagiaire.chambre');
+        return Sortie::create($data + ['statut' => 'sorti'])->load('stagiaire.chambre');
     }
 
     public function update(Request $request, Sortie $sortie)
@@ -79,7 +85,7 @@ class SortieController extends Controller
             'date_retour' => 'sometimes|date|after_or_equal:date_sortie',
             'contact' => 'nullable|string|max:30',
             'motif' => 'nullable|string',
-            'statut' => 'sometimes|in:en_attente,validee,refusee',
+            'statut' => 'sometimes|in:sorti,retourne',
         ]);
 
         $before = $sortie->only(['date_sortie', 'date_retour', 'contact', 'motif', 'statut']);
@@ -97,6 +103,10 @@ class SortieController extends Controller
 
     public function destroy(Request $request, Sortie $sortie)
     {
+        if ($request->user()?->role !== 'admin') {
+            abort(403, 'Seul admin peut supprimer une sortie');
+        }
+
         $sortie->load('stagiaire');
         $this->ensureVisible($request, $sortie);
         $sortie->delete();

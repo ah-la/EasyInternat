@@ -10,8 +10,7 @@ import { store } from '../lib/store.js'
 const emptyForm = {
   dateSortie: '',
   dateRetour: '',
-  motif: '',
-  contact: ''
+  motif: ''
 }
 
 export default function StagiaireSortie() {
@@ -25,14 +24,17 @@ export default function StagiaireSortie() {
 
   const submit = async (event) => {
     event.preventDefault()
-    await store.createSortie({
-      date_sortie: form.dateSortie,
-      date_retour: form.dateRetour,
-      contact: form.contact,
-      motif: form.motif
-    })
-    toast.success('Demande de sortie envoyee au responsable.')
-    setForm(emptyForm)
+    try {
+      await store.createSortie({
+        date_sortie: form.dateSortie,
+        date_retour: form.dateRetour,
+        motif: form.motif
+      })
+      toast.success('Sortie enregistree et envoyee au responsable.')
+      setForm(emptyForm)
+    } catch (error) {
+      toast.error(error.response?.data?.message || "La sortie n'a pas pu etre envoyee.")
+    }
   }
 
   return (
@@ -59,7 +61,7 @@ export default function StagiaireSortie() {
           </div>
           <h1 className="mt-5 text-3xl font-bold text-primary">Declarer une sortie</h1>
           <p className="mt-3 text-sm leading-6 text-muted">
-            Indiquez uniquement la date de sortie et la date de retour.
+            Indiquez la date de sortie, la date de retour prevue et le motif.
           </p>
         </div>
 
@@ -69,12 +71,8 @@ export default function StagiaireSortie() {
             <input required className="input" type="date" value={form.dateSortie} onChange={(event) => setForm({ ...form, dateSortie: event.target.value })} />
           </label>
           <label className="block">
-            <span className="mb-2 block text-sm font-semibold text-primary">Date de retour</span>
+            <span className="mb-2 block text-sm font-semibold text-primary">Date retour prevue</span>
             <input required className="input" type="date" value={form.dateRetour} onChange={(event) => setForm({ ...form, dateRetour: event.target.value })} />
-          </label>
-          <label className="block sm:col-span-2">
-            <span className="mb-2 block text-sm font-semibold text-primary">Telephone du parent / contact</span>
-            <input required className="input" placeholder="06XXXXXXXX" value={form.contact} onChange={(event) => setForm({ ...form, contact: event.target.value })} />
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-2 block text-sm font-semibold text-primary">Motif</span>

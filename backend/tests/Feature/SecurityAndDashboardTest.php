@@ -87,7 +87,7 @@ class SecurityAndDashboardTest extends TestCase
             'stagiaire_id' => $stagiaire->id,
             'date_sortie' => today(),
             'date_retour' => today()->addDay(),
-            'statut' => 'en_attente',
+            'statut' => 'sorti',
         ]);
 
         Sanctum::actingAs($responsable);
@@ -103,6 +103,50 @@ class SecurityAndDashboardTest extends TestCase
                     '*' => ['type', 'title', 'message', 'count', 'tone', 'target'],
                 ],
             ]);
+    }
+
+    public function test_sorties_are_role_scoped_and_only_admin_can_delete(): void
+    {
+        $responsable = User::factory()->create(['role' => 'responsable', 'category' => 'filles']);
+        $admin = User::factory()->create(['role' => 'admin']);
+        $girlsRoom = Chambre::factory()->create(['category' => 'filles']);
+        $boysRoom = Chambre::factory()->create(['category' => 'garcons']);
+        $girl = Stagiaire::factory()->filles()->create(['chambre_id' => $girlsRoom->id]);
+        $boy = Stagiaire::factory()->garcons()->create(['chambre_id' => $boysRoom->id]);
+
+        $girlSortie = Sortie::create([
+            'stagiaire_id' => $girl->id,
+            'date_sortie' => today(),
+            'date_retour' => today()->addDay(),
+            'statut' => 'sorti',
+        ]);
+        $boySortie = Sortie::create([
+            'stagiaire_id' => $boy->id,
+            'date_sortie' => today(),
+            'date_retour' => today()->subDay(),
+            'statut' => 'sorti',
+        ]);
+
+        Sanctum::actingAs($responsable);
+
+        $this->getJson('/api/sorties?category=garcons')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.stagiaire.category', 'filles');
+
+        $this->putJson("/api/sorties/{$girlSortie->id}", ['statut' => 'retourne'])
+            ->assertOk()
+            ->assertJsonPath('statut', 'retourne');
+
+        $this->deleteJson("/api/sorties/{$girlSortie->id}")->assertForbidden();
+
+        Sanctum::actingAs($admin);
+
+        $this->getJson('/api/sorties?statut=retard')
+            ->assertOk()
+            ->assertJsonPath('data.0.id', $boySortie->id);
+
+        $this->deleteJson("/api/sorties/{$boySortie->id}")->assertNoContent();
     }
 
     public function test_public_demande_requires_center_candidate_and_uses_center_data(): void

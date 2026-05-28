@@ -134,9 +134,17 @@ const mapSortie = (row = {}) => ({
   genre: row.stagiaire?.genre || categoryToGenre(row.stagiaire?.category),
   chambre: row.stagiaire?.chambre?.numero || '',
   categorie: categoryToLabel(row.stagiaire?.category),
+  telephone: row.stagiaire?.telephone || row.contact || '',
   dateSortie: row.date_sortie,
   dateRetour: row.date_retour,
-  statut: row.statut
+  motif: row.motif || '',
+  statut_api: row.statut_effectif || row.statut,
+  statut:
+    (row.statut_effectif || row.statut) === 'retourne'
+      ? 'Retourne'
+      : (row.statut_effectif || row.statut) === 'retard'
+        ? 'Retard'
+        : 'Sorti'
 })
 
 const mapReclamation = (row = {}) => ({
@@ -198,6 +206,7 @@ export const store = {
   getSorties: (params) => list('/sorties', mapSortie, params),
   createSortie: async (payload) => mapSortie((await api.post('/sorties', payload)).data),
   updateSortie: async (id, payload) => mapSortie((await api.put(`/sorties/${id}`, payload)).data),
+  deleteSortie: (id) => api.delete(`/sorties/${id}`),
 
   getReclamations: (params) => list('/reclamations', mapReclamation, params),
   createReclamation: async (payload) => mapReclamation((await api.post('/reclamations', payload)).data),

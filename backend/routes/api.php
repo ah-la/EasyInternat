@@ -30,7 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/stagiaires', StagiaireController::class);
         Route::apiResource('/chambres', ChambreController::class);
         Route::apiResource('/paiements', PaiementController::class);
-        Route::apiResource('/sorties', SortieController::class)->except(['show', 'store']);
+        Route::apiResource('/sorties', SortieController::class)->except(['show', 'store'])->parameters(['sorties' => 'sortie']);
         Route::apiResource('/reclamations', ReclamationController::class)->except(['store']);
         Route::get('/pdf/{type}', [PdfController::class, 'export']);
     });

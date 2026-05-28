@@ -37,7 +37,7 @@ class DashboardController extends Controller
             'demandes_en_attente' => (clone $demandes)->where('statut', 'en_attente')->count(),
             'paiements_retard' => $latePayments,
             'reclamations_ouvertes' => (clone $reclamations)->whereIn('statut', ['en_attente', 'en_cours'])->count(),
-            'sorties_en_attente' => (clone $sorties)->where('statut', 'en_attente')->count(),
+            'sorties_en_attente' => (clone $sorties)->where('statut', 'sorti')->count(),
             'monthly_activity' => $this->monthlyActivity($category),
             'notifications' => $this->notifications(
                 demandes: clone $demandes,
@@ -100,7 +100,7 @@ class DashboardController extends Controller
 
         $newDemandes = (clone $demandes)->where('statut', 'en_attente')->whereDate('created_at', $today)->count();
         $openReclamations = (clone $reclamations)->whereIn('statut', ['en_attente', 'en_cours'])->count();
-        $pendingSorties = (clone $sorties)->where('statut', 'en_attente')->count();
+        $pendingSorties = (clone $sorties)->where('statut', 'sorti')->count();
 
         return collect([
             [
@@ -129,8 +129,8 @@ class DashboardController extends Controller
             ],
             [
                 'type' => 'sortie',
-                'title' => 'Sorties en attente',
-                'message' => $pendingSorties > 0 ? "$pendingSorties sortie(s) attendent une decision" : 'Aucune sortie en attente',
+                'title' => 'Stagiaires dehors',
+                'message' => $pendingSorties > 0 ? "$pendingSorties stagiaire(s) sont actuellement dehors" : 'Aucun stagiaire dehors',
                 'count' => $pendingSorties,
                 'tone' => $pendingSorties > 0 ? 'warning' : 'success',
                 'target' => 'sorties',
