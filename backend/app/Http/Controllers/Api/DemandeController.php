@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\{ActionHistory, Chambre, Demande, StagiaireCentre, Stagiaire, User};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -223,38 +224,42 @@ class DemandeController extends Controller
             return response()->json(['message' => 'Aucune chambre disponible pour cette categorie'], 422);
         }
 
-        $user = User::firstOrCreate(
-            ['email' => $demande->email],
-            [
-                'name' => trim($demande->nom.' '.$demande->prenom),
-                'password' => Hash::make($password),
-                'role' => 'stagiaire',
-                'category' => $category,
-            ]
-        );
+        [$user, $stagiaire] = DB::transaction(function () use ($request, $demande, $password, $category, $chambre) {
+            $user = User::firstOrCreate(
+                ['email' => $demande->email],
+                [
+                    'name' => trim($demande->nom.' '.$demande->prenom),
+                    'password' => Hash::make($password),
+                    'role' => 'stagiaire',
+                    'category' => $category,
+                ]
+            );
 
-        $stagiaire = Stagiaire::firstOrCreate(
-            ['cin' => $demande->cin],
-            [
-                'user_id' => $user->id,
-                'nom' => $demande->nom,
-                'prenom' => $demande->prenom,
-                'telephone' => $demande->telephone,
-                'genre' => $this->genreFromCategory($category),
-                'filiere' => $demande->filiere,
-                'chambre_id' => $chambre->id,
-                'category' => $category,
-            ]
-        );
+            $stagiaire = Stagiaire::firstOrCreate(
+                ['cin' => $demande->cin],
+                [
+                    'user_id' => $user->id,
+                    'nom' => $demande->nom,
+                    'prenom' => $demande->prenom,
+                    'telephone' => $demande->telephone,
+                    'genre' => $this->genreFromCategory($category),
+                    'filiere' => $demande->filiere,
+                    'chambre_id' => $chambre->id,
+                    'category' => $category,
+                ]
+            );
 
-        if (!$stagiaire->chambre_id) {
-            $stagiaire->update(['chambre_id' => $chambre->id]);
-        }
+            if (!$stagiaire->chambre_id) {
+                $stagiaire->update(['chambre_id' => $chambre->id]);
+            }
 
-        $demande->update(['statut' => 'acceptee']);
-        ActionHistory::record($request->user(), 'demande_accepted', $demande, 'Demande acceptee', [
-            'stagiaire_id' => $stagiaire->id,
-        ]);
+            $demande->update(['statut' => 'acceptee']);
+            ActionHistory::record($request->user(), 'demande_accepted', $demande, 'Demande acceptee', [
+                'stagiaire_id' => $stagiaire->id,
+            ]);
+
+            return [$user, $stagiaire->load('chambre', 'user')];
+        });
 
         return response()->json([
             'message' => 'Demande acceptee',

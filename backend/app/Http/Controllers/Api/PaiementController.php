@@ -7,6 +7,7 @@ use App\Models\ActionHistory;
 use App\Models\Paiement;
 use App\Models\Stagiaire;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaiementController extends Controller
 {
@@ -62,23 +63,45 @@ class PaiementController extends Controller
     {
         $data = $request->validate([
             'stagiaire_id' => 'required|exists:stagiaires,id',
-            'mois' => 'required|string|max:255',
+            'mois' => 'required',
+            'mois.*' => 'string|max:255',
             'montant' => 'required|numeric|min:0',
             'statut' => 'nullable|in:paye',
             'date_paiement' => 'required|date',
         ]);
 
         $this->ensureStagiaireVisible($request, (int) $data['stagiaire_id']);
-        if (Paiement::where('stagiaire_id', $data['stagiaire_id'])->where('mois', $data['mois'])->exists()) {
+        $months = collect(is_array($data['mois']) ? $data['mois'] : [$data['mois']])
+            ->map(fn ($month) => trim((string) $month))
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($months->isEmpty()) {
+            return response()->json(['message' => 'Selectionnez au moins un mois paye'], 422);
+        }
+
+        if (Paiement::where('stagiaire_id', $data['stagiaire_id'])->whereIn('mois', $months)->exists()) {
             return response()->json(['message' => 'Ce mois est deja paye pour ce stagiaire'], 422);
         }
 
-        $data['statut'] = 'paye';
+        $created = DB::transaction(function () use ($request, $data, $months) {
+            return $months->map(function ($month) use ($request, $data) {
+                $paiement = Paiement::create([
+                    'stagiaire_id' => $data['stagiaire_id'],
+                    'mois' => $month,
+                    'montant' => $data['montant'],
+                    'statut' => 'paye',
+                    'date_paiement' => $data['date_paiement'],
+                ])->load('stagiaire.chambre');
 
-        $paiement = Paiement::create($data)->load('stagiaire.chambre');
-        ActionHistory::record($request->user(), 'paiement_created', $paiement, 'Paiement cree', $data);
+                ActionHistory::record($request->user(), 'paiement_created', $paiement, 'Paiement cree', $paiement->toArray());
 
-        return $paiement;
+                return $paiement;
+            });
+        });
+
+        return is_array($data['mois']) ? $created : $created->first();
     }
 
     public function show(Request $request, Paiement $paiement)

@@ -60,7 +60,9 @@ class SecurityAndDashboardTest extends TestCase
         $response = $this->postJson('/api/sorties', [
             'stagiaire_id' => $second->id,
             'date_sortie' => now()->toDateString(),
+            'heure_sortie' => '09:00',
             'date_retour' => now()->addDay()->toDateString(),
+            'heure_retour_prevue' => '18:00',
             'contact' => '0600000000',
             'motif' => 'Test securite',
         ]);
@@ -86,7 +88,9 @@ class SecurityAndDashboardTest extends TestCase
         Sortie::create([
             'stagiaire_id' => $stagiaire->id,
             'date_sortie' => today(),
+            'heure_sortie' => '09:00',
             'date_retour' => today()->addDay(),
+            'heure_retour_prevue' => '18:00',
             'statut' => 'sorti',
         ]);
 
@@ -117,13 +121,17 @@ class SecurityAndDashboardTest extends TestCase
         $girlSortie = Sortie::create([
             'stagiaire_id' => $girl->id,
             'date_sortie' => today(),
+            'heure_sortie' => '09:00',
             'date_retour' => today()->addDay(),
+            'heure_retour_prevue' => '18:00',
             'statut' => 'sorti',
         ]);
         $boySortie = Sortie::create([
             'stagiaire_id' => $boy->id,
             'date_sortie' => today(),
+            'heure_sortie' => '09:00',
             'date_retour' => today()->subDay(),
+            'heure_retour_prevue' => '18:00',
             'statut' => 'sorti',
         ]);
 
@@ -367,11 +375,12 @@ class SecurityAndDashboardTest extends TestCase
 
         $this->postJson('/api/paiements', [
             'stagiaire_id' => $stagiaire->id,
-            'mois' => 'Mai',
+            'mois' => ['Mai', 'Juin'],
             'montant' => 300,
             'date_paiement' => now()->toDateString(),
         ])->assertSuccessful()
-            ->assertJsonPath('statut', 'paye');
+            ->assertJsonPath('0.statut', 'paye')
+            ->assertJsonPath('1.mois', 'Juin');
 
         $this->postJson('/api/paiements', [
             'stagiaire_id' => $stagiaire->id,

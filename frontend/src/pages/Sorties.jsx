@@ -49,8 +49,8 @@ function DetailsModal({ sortie, onClose }) {
             ['Chambre', sortie.chambre || '-'],
             ['Categorie', sortie.categorie || '-'],
             ['Telephone', sortie.telephone || '-'],
-            ['Date sortie', sortie.dateSortie || '-'],
-            ['Date retour prevue', sortie.dateRetour || '-'],
+            ['Date sortie', `${sortie.dateSortie || '-'} ${sortie.heureSortie || ''}`.trim()],
+            ['Date retour prevue', `${sortie.dateRetour || '-'} ${sortie.heureRetour || ''}`.trim()],
             ['Statut', sortie.statut || '-'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-sky-100 bg-slate-50 p-4">
@@ -129,8 +129,26 @@ export default function Sorties() {
     { accessorKey: 'chambre', header: 'Chambre' },
     { accessorKey: 'categorie', header: 'Categorie' },
     { accessorKey: 'telephone', header: 'Telephone' },
-    { accessorKey: 'dateSortie', header: 'Date sortie' },
-    { accessorKey: 'dateRetour', header: 'Date retour prevue' },
+    {
+      accessorKey: 'dateSortie',
+      header: 'Date sortie',
+      cell: ({ row }) => (
+        <div>
+          <p>{row.original.dateSortie || '-'}</p>
+          <p className="text-xs font-bold text-muted">{row.original.heureSortie || ''}</p>
+        </div>
+      )
+    },
+    {
+      accessorKey: 'dateRetour',
+      header: 'Date retour prevue',
+      cell: ({ row }) => (
+        <div>
+          <p>{row.original.dateRetour || '-'}</p>
+          <p className="text-xs font-bold text-muted">{row.original.heureRetour || ''}</p>
+        </div>
+      )
+    },
     {
       accessorKey: 'motif',
       header: 'Motif',

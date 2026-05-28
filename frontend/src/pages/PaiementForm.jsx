@@ -117,9 +117,7 @@ export default function PaiementForm() {
       if (isEditing) {
         await store.updatePaiement(id, { ...basePayload, mois: selectedMonths[0] })
       } else {
-        for (const month of selectedMonths) {
-          await store.createPaiement({ ...basePayload, mois: month })
-        }
+        await store.createPaiements({ ...basePayload, mois: selectedMonths })
       }
 
       toast.success(isEditing ? 'Paiement modifie avec succes.' : 'Paiement ajoute avec succes.')

@@ -37,7 +37,14 @@ class SortieController extends Controller
 
         if ($request->filled('statut')) {
             if ($request->statut === 'retard') {
-                $query->where('statut', 'sorti')->whereDate('date_retour', '<', today());
+                $query->where('statut', 'sorti')
+                    ->where(function ($q) {
+                        $q->whereDate('date_retour', '<', today())
+                            ->orWhere(fn ($x) => $x
+                                ->whereDate('date_retour', today())
+                                ->whereNotNull('heure_retour_prevue')
+                                ->where('heure_retour_prevue', '<', now()->format('H:i:s')));
+                    });
             } elseif ($request->statut === 'sorti') {
                 $query->where('statut', 'sorti')->whereDate('date_retour', '>=', today());
             } else {
@@ -61,7 +68,9 @@ class SortieController extends Controller
     {
         $data = $request->validate([
             'date_sortie' => 'required|date',
+            'heure_sortie' => 'required|date_format:H:i',
             'date_retour' => 'required|date|after_or_equal:date_sortie',
+            'heure_retour_prevue' => 'required|date_format:H:i',
             'contact' => 'nullable|string|max:30',
             'motif' => 'required|string|min:3|max:255',
         ]);
@@ -82,19 +91,21 @@ class SortieController extends Controller
 
         $data = $request->validate([
             'date_sortie' => 'sometimes|date',
+            'heure_sortie' => 'sometimes|date_format:H:i',
             'date_retour' => 'sometimes|date|after_or_equal:date_sortie',
+            'heure_retour_prevue' => 'sometimes|date_format:H:i',
             'contact' => 'nullable|string|max:30',
             'motif' => 'nullable|string',
             'statut' => 'sometimes|in:sorti,retourne',
         ]);
 
-        $before = $sortie->only(['date_sortie', 'date_retour', 'contact', 'motif', 'statut']);
+        $before = $sortie->only(['date_sortie', 'heure_sortie', 'date_retour', 'heure_retour_prevue', 'contact', 'motif', 'statut']);
         $sortie->update($data);
 
         if (array_key_exists('statut', $data)) {
             ActionHistory::record($request->user(), 'sortie_status_updated', $sortie, 'Statut sortie modifie', [
                 'before' => $before,
-                'after' => $sortie->only(['date_sortie', 'date_retour', 'contact', 'motif', 'statut']),
+                'after' => $sortie->only(['date_sortie', 'heure_sortie', 'date_retour', 'heure_retour_prevue', 'contact', 'motif', 'statut']),
             ]);
         }
 

@@ -157,6 +157,8 @@ const mapSortie = (row = {}) => ({
   dateRetour: formatDate(row.date_retour),
   dateSortieRaw: dateRaw(row.date_sortie),
   dateRetourRaw: dateRaw(row.date_retour),
+  heureSortie: row.heure_sortie ? String(row.heure_sortie).slice(0, 5) : '',
+  heureRetour: row.heure_retour_prevue ? String(row.heure_retour_prevue).slice(0, 5) : '',
   motif: row.motif || '',
   statut_api: row.statut_effectif || row.statut,
   statut:
@@ -234,6 +236,10 @@ export const store = {
 
   getPaiements: (params) => list('/paiements', mapPaiement, params),
   createPaiement: async (payload) => mapPaiement((await api.post('/paiements', payload)).data),
+  createPaiements: async (payload) => {
+    const { data } = await api.post('/paiements', payload)
+    return (Array.isArray(data) ? data : [data]).map(mapPaiement)
+  },
   updatePaiement: async (id, payload) => mapPaiement((await api.put(`/paiements/${id}`, payload)).data),
   deletePaiement: (id) => api.delete(`/paiements/${id}`),
 

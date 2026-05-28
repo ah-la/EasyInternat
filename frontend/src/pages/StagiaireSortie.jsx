@@ -10,7 +10,9 @@ import { store } from '../lib/store.js'
 
 const emptyForm = {
   dateSortie: '',
+  heureSortie: '',
   dateRetour: '',
+  heureRetour: '',
   motif: 'Weekend',
   motifAutre: ''
 }
@@ -45,6 +47,16 @@ export default function StagiaireSortie() {
       return false
     }
 
+    if (!form.heureSortie) {
+      toast.error('Heure sortie obligatoire.')
+      return false
+    }
+
+    if (!form.heureRetour) {
+      toast.error('Heure retour obligatoire.')
+      return false
+    }
+
     if (form.dateRetour < form.dateSortie) {
       toast.error('Date retour doit etre apres la date sortie.')
       return false
@@ -66,7 +78,9 @@ export default function StagiaireSortie() {
     try {
       await store.createSortie({
         date_sortie: form.dateSortie,
+        heure_sortie: form.heureSortie,
         date_retour: form.dateRetour,
+        heure_retour_prevue: form.heureRetour,
         motif: form.motif === 'Autre' ? form.motifAutre.trim() : form.motif
       })
       toast.success('Sortie declaree avec succes.')
@@ -116,8 +130,16 @@ export default function StagiaireSortie() {
             <input required className="input" type="date" value={form.dateSortie} onChange={(event) => setForm({ ...form, dateSortie: event.target.value })} />
           </label>
           <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-primary">Heure de sortie</span>
+            <input required className="input" type="time" value={form.heureSortie} onChange={(event) => setForm({ ...form, heureSortie: event.target.value })} />
+          </label>
+          <label className="block">
             <span className="mb-2 block text-sm font-semibold text-primary">Date retour prevue</span>
             <input required className="input" type="date" value={form.dateRetour} onChange={(event) => setForm({ ...form, dateRetour: event.target.value })} />
+          </label>
+          <label className="block">
+            <span className="mb-2 block text-sm font-semibold text-primary">Heure retour prevue</span>
+            <input required className="input" type="time" value={form.heureRetour} onChange={(event) => setForm({ ...form, heureRetour: event.target.value })} />
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-2 block text-sm font-semibold text-primary">Motif</span>
