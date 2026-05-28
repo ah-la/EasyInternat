@@ -35,7 +35,6 @@ class ReclamationController extends Controller
         $query = $this->scoped($request);
 
         if ($request->filled('statut')) $query->where('statut', $request->statut);
-        if ($request->filled('priorite')) $query->where('priorite', $request->priorite);
         if ($request->filled('type')) $query->where('type', $request->type);
         if ($request->filled('date')) $query->whereDate('created_at', $request->date);
         if ($request->filled('category') && $request->user()?->role === 'admin') {
@@ -58,7 +57,6 @@ class ReclamationController extends Controller
             'type' => 'required|string|max:100',
             'sujet' => 'required|string|max:255',
             'message' => 'required|string',
-            'priorite' => 'nullable|in:urgente,normale,faible',
         ]);
 
         $stagiaire = $request->user()->stagiaire;
@@ -90,7 +88,6 @@ class ReclamationController extends Controller
             'type' => 'sometimes|string|max:100',
             'sujet' => 'sometimes|string|max:255',
             'message' => 'sometimes|string',
-            'priorite' => 'sometimes|in:urgente,normale,faible',
             'reponse_admin' => 'nullable|string',
             'statut' => 'sometimes|in:en_attente,en_cours,traitee',
         ]);
@@ -100,13 +97,13 @@ class ReclamationController extends Controller
             $data['reponse_by_id'] = $request->user()?->id;
         }
 
-        $before = $reclamation->only(['type', 'sujet', 'message', 'priorite', 'reponse_admin', 'reponse_at', 'reponse_by_id', 'statut']);
+        $before = $reclamation->only(['type', 'sujet', 'message', 'reponse_admin', 'reponse_at', 'reponse_by_id', 'statut']);
         $reclamation->update($data);
 
         if (array_key_exists('reponse_admin', $data) || array_key_exists('statut', $data)) {
             ActionHistory::record($request->user(), 'reclamation_answered', $reclamation, 'Reclamation traitee', [
                 'before' => $before,
-                'after' => $reclamation->only(['type', 'sujet', 'message', 'priorite', 'reponse_admin', 'reponse_at', 'reponse_by_id', 'statut']),
+                'after' => $reclamation->only(['type', 'sujet', 'message', 'reponse_admin', 'reponse_at', 'reponse_by_id', 'statut']),
             ]);
         }
 

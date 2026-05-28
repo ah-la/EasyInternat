@@ -9,7 +9,7 @@ class Reclamation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['stagiaire_id', 'type', 'sujet', 'message', 'priorite', 'reponse_admin', 'reponse_at', 'reponse_by_id', 'statut'];
+    protected $fillable = ['stagiaire_id', 'type', 'sujet', 'message', 'reponse_admin', 'reponse_at', 'reponse_by_id', 'statut'];
 
     protected $casts = [
         'reponse_at' => 'datetime',

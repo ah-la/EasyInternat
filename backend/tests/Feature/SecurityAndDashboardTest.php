@@ -159,12 +159,10 @@ class SecurityAndDashboardTest extends TestCase
 
         $girlReclamation = Reclamation::factory()->create([
             'stagiaire_id' => $girl->id,
-            'priorite' => 'urgente',
             'statut' => 'en_attente',
         ]);
         Reclamation::factory()->create([
             'stagiaire_id' => $boy->id,
-            'priorite' => 'normale',
             'statut' => 'en_attente',
         ]);
 
@@ -173,8 +171,7 @@ class SecurityAndDashboardTest extends TestCase
         $this->getJson('/api/reclamations')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.stagiaire.category', 'filles')
-            ->assertJsonPath('data.0.priorite', 'urgente');
+            ->assertJsonPath('data.0.stagiaire.category', 'filles');
 
         $this->putJson("/api/reclamations/{$girlReclamation->id}", [
             'reponse_admin' => 'Intervention programmee.',

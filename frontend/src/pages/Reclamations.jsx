@@ -12,13 +12,6 @@ const categoryClass = (category = '') =>
     ? 'border-pink-200 bg-pink-50 text-pink-700'
     : 'border-sky-200 bg-sky-50 text-sky-700'
 
-const priorityTone = (priority = '') => {
-  const normalized = String(priority).toLowerCase()
-  if (normalized.includes('urgent')) return 'danger'
-  if (normalized.includes('faible')) return 'neutral'
-  return 'warning'
-}
-
 function StatCard({ label, value, icon: Icon, tone }) {
   return (
     <Card className="rounded-3xl border-sky-100 bg-white/95 p-5 shadow-[0_18px_45px_rgba(14,165,233,0.08)]">
@@ -93,7 +86,6 @@ function DetailsModal({ selected, onClose, onReply }) {
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={statusTone(selected.statut)}>{selected.statut}</Badge>
-            <Badge tone={priorityTone(selected.priorite)}>{selected.priorite}</Badge>
           </div>
           <button
             type="button"
@@ -110,14 +102,11 @@ function DetailsModal({ selected, onClose, onReply }) {
 }
 
 function ResponseModal({ target, onClose, onSubmit, saving }) {
-  const [form, setForm] = useState({ reponse_admin: '', statut: 'traitee' })
+  const [reponse, setReponse] = useState('')
 
   useEffect(() => {
     if (!target) return
-    setForm({
-      reponse_admin: target.reponse_admin || '',
-      statut: target.statut_api === 'en_cours' ? 'en_cours' : 'traitee'
-    })
+    setReponse(target.reponse_admin || '')
   }, [target])
 
   if (!target) return null
@@ -127,7 +116,7 @@ function ResponseModal({ target, onClose, onSubmit, saving }) {
       <form
         onSubmit={(event) => {
           event.preventDefault()
-          onSubmit(target, form)
+          onSubmit(target, reponse)
         }}
         className="w-full max-w-xl rounded-3xl border border-sky-100 bg-white p-5 shadow-[0_24px_70px_rgba(7,59,92,0.22)]"
       >
@@ -142,23 +131,17 @@ function ResponseModal({ target, onClose, onSubmit, saving }) {
         </div>
 
         <label className="block">
-          <span className="mb-2 block text-sm font-black text-primary">Statut</span>
-          <select className="input" value={form.statut} onChange={(event) => setForm({ ...form, statut: event.target.value })}>
-            <option value="en_cours">En cours</option>
-            <option value="traitee">Traitee</option>
-          </select>
-        </label>
-
-        <label className="mt-4 block">
           <span className="mb-2 block text-sm font-black text-primary">Reponse</span>
           <textarea
-            required
             rows={5}
             className="input min-h-36 resize-y"
-            placeholder="Ecrire la reponse pour le stagiaire..."
-            value={form.reponse_admin}
-            onChange={(event) => setForm({ ...form, reponse_admin: event.target.value })}
+            placeholder="Ecrire la reponse pour traiter, ou laisser vide pour mettre en cours..."
+            value={reponse}
+            onChange={(event) => setReponse(event.target.value)}
           />
+          <p className="mt-2 text-xs font-semibold text-muted">
+            Reponse vide = En cours. Reponse remplie = Traitee.
+          </p>
         </label>
 
         <div className="mt-5 flex justify-end gap-2">
@@ -176,7 +159,7 @@ function ResponseModal({ target, onClose, onSubmit, saving }) {
 export default function Reclamations() {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ statut: '', priorite: '' })
+  const [filters, setFilters] = useState({ statut: '' })
   const [selected, setSelected] = useState(null)
   const [replyTarget, setReplyTarget] = useState(null)
   const [saving, setSaving] = useState(false)
@@ -193,14 +176,18 @@ export default function Reclamations() {
     chambres: rows.filter((row) => String(row.type || '').toLowerCase().includes('chambre')).length,
   }), [rows])
 
-  const submitResponse = async (row, payload) => {
+  const submitResponse = async (row, reponse) => {
     setSaving(true)
     try {
+      const hasResponse = reponse.trim().length > 0
+      const payload = hasResponse
+        ? { reponse_admin: reponse.trim(), statut: 'traitee' }
+        : { reponse_admin: '', statut: 'en_cours' }
       const updated = await store.updateReclamation(row.id, payload)
       setRows((current) => current.map((item) => (item.id === row.id ? updated : item)))
       setSelected((current) => (current?.id === row.id ? updated : current))
       setReplyTarget(null)
-      toast.success(payload.statut === 'traitee' ? 'Reponse envoyee.' : 'Reclamation mise en cours.')
+      toast.success(hasResponse ? 'Reponse envoyee.' : 'Reclamation mise en cours.')
     } catch (error) {
       toast.error(error.response?.data?.message || "La reponse n'a pas pu etre envoyee.")
     } finally {
@@ -246,7 +233,6 @@ export default function Reclamations() {
         </button>
       )
     },
-    { accessorKey: 'priorite', header: 'Priorite', cell: ({ getValue }) => <Badge tone={priorityTone(getValue())}>{getValue()}</Badge> },
     { accessorKey: 'statut', header: 'Statut', cell: ({ getValue }) => <Badge tone={statusTone(getValue())}>{getValue()}</Badge> },
     {
       accessorKey: 'reponse_admin',
@@ -295,16 +281,6 @@ export default function Reclamations() {
               <option value="en_attente">En attente</option>
               <option value="en_cours">En cours</option>
               <option value="traitee">Traitee</option>
-            </select>
-            <select
-              value={filters.priorite}
-              onChange={(event) => setFilters((current) => ({ ...current, priorite: event.target.value }))}
-              className="h-10 rounded-lg border border-border bg-white px-3 text-sm outline-none focus:border-secondary"
-            >
-              <option value="">Priorite</option>
-              <option value="urgente">Urgente</option>
-              <option value="normale">Normale</option>
-              <option value="faible">Faible</option>
             </select>
           </div>
         }

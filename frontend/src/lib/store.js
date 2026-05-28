@@ -50,13 +50,6 @@ export function reclamationStatusLabel(value = '') {
   return 'En attente'
 }
 
-export function priorityLabel(value = '') {
-  const normalized = String(value).toLowerCase()
-  if (normalized.includes('urgent')) return 'Urgente'
-  if (normalized.includes('faible')) return 'Faible'
-  return 'Normale'
-}
-
 export function demandeStatusLabel(value = '') {
   const normalized = String(value).toLowerCase()
   if (normalized === 'acceptee' || normalized.includes('accept')) return 'Acceptée'
@@ -191,9 +184,7 @@ const mapReclamation = (row = {}) => ({
   reponse_at_label: row.reponse_at ? `${formatDate(row.reponse_at)} ${String(row.reponse_at).slice(11, 16)}` : '',
   reponse_by: row.reponse_by?.name || row.reponseBy?.name || '',
   statut_api: row.statut || 'en_attente',
-  statut: reclamationStatusLabel(row.statut),
-  priorite_api: row.priorite || 'normale',
-  priorite: priorityLabel(row.priorite)
+  statut: reclamationStatusLabel(row.statut)
 })
 
 const mapProfile = (row = {}) => ({
