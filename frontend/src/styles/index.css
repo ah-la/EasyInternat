@@ -49,27 +49,12 @@ textarea {
 }
 
 .sidebar-scrollbar {
-  scrollbar-color: #7dd3fc #eff9ff;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .sidebar-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
-.sidebar-scrollbar::-webkit-scrollbar-track {
-  background: #eff9ff;
-  border-radius: 999px;
-}
-
-.sidebar-scrollbar::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #bae6fd, #38bdf8);
-  border: 2px solid #eff9ff;
-  border-radius: 999px;
-}
-
-.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #7dd3fc, #0ea5e9);
+  display: none;
 }
 
 @layer components {
