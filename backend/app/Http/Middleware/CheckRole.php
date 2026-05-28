@@ -11,7 +11,7 @@ class CheckRole
     {
         $user = $request->user();
 
-        if (!$user || !in_array($user->role, $roles, true)) {
+        if (!$user || !$user->is_active || !in_array($user->role, $roles, true)) {
             return response()->json(['message' => 'Acces non autorise'], 403);
         }
 

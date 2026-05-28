@@ -19,6 +19,12 @@ class AuthController extends Controller
             return response()->json(['message' => 'Identifiants incorrects'], 401);
         }
 
+        if (!$user->is_active) {
+            return response()->json(['message' => 'Compte inactif. Contactez l administrateur.'], 403);
+        }
+
+        $user->forceFill(['last_login_at' => now()])->save();
+
         return response()->json([
             'user' => $user,
             'token' => $user->createToken('api-token')->plainTextToken,

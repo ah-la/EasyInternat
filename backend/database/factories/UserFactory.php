@@ -23,6 +23,9 @@ class UserFactory extends Factory
             'remember_token' => Str::random(10),
             'role' => 'stagiaire',
             'category' => fake()->randomElement(['filles', 'garcons']),
+            'telephone' => fake()->numerify('06########'),
+            'is_active' => true,
+            'last_login_at' => null,
         ];
     }
 

@@ -12,17 +12,17 @@ class DatabaseSeeder extends Seeder
     {
         User::firstOrCreate(
             ['email' => 'admin@cmc.test'],
-            ['name' => 'Admin General', 'password' => Hash::make('password'), 'role' => 'admin']
+            ['name' => 'Admin General', 'password' => Hash::make('password'), 'role' => 'admin', 'is_active' => true]
         );
 
         User::firstOrCreate(
             ['email' => 'filles@cmc.test'],
-            ['name' => 'Responsable Filles', 'password' => Hash::make('password'), 'role' => 'responsable', 'category' => 'filles']
+            ['name' => 'Responsable Filles', 'telephone' => '0600000001', 'password' => Hash::make('password'), 'role' => 'responsable', 'category' => 'filles', 'is_active' => true]
         );
 
         User::firstOrCreate(
             ['email' => 'garcons@cmc.test'],
-            ['name' => 'Responsable Garcons', 'password' => Hash::make('password'), 'role' => 'responsable', 'category' => 'garcons']
+            ['name' => 'Responsable Garcons', 'telephone' => '0600000002', 'password' => Hash::make('password'), 'role' => 'responsable', 'category' => 'garcons', 'is_active' => true]
         );
 
         $this->call(DemoStagiairesSeeder::class);

@@ -365,4 +365,40 @@ class SecurityAndDashboardTest extends TestCase
         ])->assertOk()
             ->assertJsonPath('chambre_id', null);
     }
+
+    public function test_admin_creates_responsable_account_and_inactive_responsable_cannot_login(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        Chambre::factory()->create(['category' => 'filles']);
+        Stagiaire::factory()->filles()->count(2)->create();
+        Sanctum::actingAs($admin);
+
+        $response = $this->postJson('/api/responsables', [
+            'name' => 'Responsable Test',
+            'email' => 'responsable.test@cmc.test',
+            'telephone' => '0611111111',
+            'password' => 'secret123',
+            'password_confirmation' => 'secret123',
+            'category' => 'filles',
+            'is_active' => true,
+        ]);
+
+        $response->assertSuccessful()
+            ->assertJsonPath('role', 'responsable')
+            ->assertJsonPath('category', 'filles')
+            ->assertJsonPath('managed_stagiaires_count', 2);
+
+        $responsable = User::where('email', 'responsable.test@cmc.test')->firstOrFail();
+        $this->assertTrue(Hash::check('secret123', $responsable->password));
+
+        $this->putJson("/api/responsables/{$responsable->id}", [
+            'is_active' => false,
+        ])->assertSuccessful()
+            ->assertJsonPath('is_active', false);
+
+        $this->postJson('/api/login', [
+            'email' => 'responsable.test@cmc.test',
+            'password' => 'secret123',
+        ])->assertForbidden();
+    }
 }

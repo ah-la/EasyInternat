@@ -63,8 +63,14 @@ const mapResponsable = (row = {}) => ({
   ...row,
   id: String(row.id),
   nom: row.name || row.nom || '',
+  email: row.email || '',
+  telephone: row.telephone || '',
   categorie: categoryToLabel(row.category),
-  statut: 'Actif'
+  roleLabel: row.category === 'filles' ? 'responsable_filles' : 'responsable_garcons',
+  statut: row.is_active === false ? 'Inactif' : 'Actif',
+  is_active: row.is_active !== false,
+  last_login: row.last_login_at ? String(row.last_login_at).replace('T', ' ').slice(0, 16) : 'Jamais',
+  managed_count: row.managed_stagiaires_count ?? 0
 })
 
 const mapDemande = (row = {}) => ({
