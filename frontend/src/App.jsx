@@ -1,34 +1,47 @@
+import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import PublicLayout from './layouts/PublicLayout.jsx'
 import AdminLayout from './layouts/AdminLayout.jsx'
 import RequireAuth from './components/RequireAuth.jsx'
-import Home from './pages/Home.jsx'
-import Dashboard from './pages/admin/Dashboard.jsx'
-import Stagiaires from './pages/Stagiaires.jsx'
-import StagiaireForm from './pages/StagiaireForm.jsx'
-import StagiaireProfile from './pages/StagiaireProfile.jsx'
-import Chambres from './pages/Chambres.jsx'
-import ChambreForm from './pages/ChambreForm.jsx'
-import Paiements from './pages/Paiements.jsx'
-import PaiementForm from './pages/PaiementForm.jsx'
-import Sorties from './pages/Sorties.jsx'
-import Reclamations from './pages/Reclamations.jsx'
-import Responsables from './pages/Responsables.jsx'
-import ResponsableForm from './pages/ResponsableForm.jsx'
-import Demandes from './pages/Demandes.jsx'
-import StagiaireSortie from './pages/StagiaireSortie.jsx'
-import StagiaireReclamation from './pages/StagiaireReclamation.jsx'
+
+const Home = lazy(() => import('./pages/Home.jsx'))
+const Dashboard = lazy(() => import('./pages/admin/Dashboard.jsx'))
+const Stagiaires = lazy(() => import('./pages/Stagiaires.jsx'))
+const StagiaireForm = lazy(() => import('./pages/StagiaireForm.jsx'))
+const StagiaireProfile = lazy(() => import('./pages/StagiaireProfile.jsx'))
+const Chambres = lazy(() => import('./pages/Chambres.jsx'))
+const ChambreForm = lazy(() => import('./pages/ChambreForm.jsx'))
+const Paiements = lazy(() => import('./pages/Paiements.jsx'))
+const PaiementForm = lazy(() => import('./pages/PaiementForm.jsx'))
+const Sorties = lazy(() => import('./pages/Sorties.jsx'))
+const Reclamations = lazy(() => import('./pages/Reclamations.jsx'))
+const Responsables = lazy(() => import('./pages/Responsables.jsx'))
+const ResponsableForm = lazy(() => import('./pages/ResponsableForm.jsx'))
+const Demandes = lazy(() => import('./pages/Demandes.jsx'))
+const StagiaireSortie = lazy(() => import('./pages/StagiaireSortie.jsx'))
+const StagiaireReclamation = lazy(() => import('./pages/StagiaireReclamation.jsx'))
+
+function PageLoader() {
+  return (
+    <div className="grid min-h-screen place-items-center bg-bg p-6 text-primary">
+      <div className="rounded-2xl border border-sky-100 bg-white px-5 py-4 text-sm font-black shadow-subtle">
+        Chargement...
+      </div>
+    </div>
+  )
+}
 
 export default function App() {
   return (
     <>
-      <Routes>
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Navigate to="/" replace />} />
-          <Route path="/demande" element={<Navigate to="/" replace />} />
-        </Route>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route element={<PublicLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Navigate to="/" replace />} />
+            <Route path="/demande" element={<Navigate to="/" replace />} />
+          </Route>
 
         <Route element={<RequireAuth allowedRoles={['admin']} />}>
           <Route path="/admin" element={<AdminLayout />}>
@@ -76,8 +89,9 @@ export default function App() {
           <Route path="/stagiaire/reclamation" element={<StagiaireReclamation />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Suspense>
       <Toaster richColors position="top-right" />
     </>
   )

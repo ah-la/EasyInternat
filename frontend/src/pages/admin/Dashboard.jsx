@@ -69,20 +69,13 @@ export default function Dashboard() {
 
   useEffect(() => {
     setLoading(true)
-    Promise.all([
-      store.getDashboard(),
-      store.getStagiaires(),
-      store.getDemandes(),
-      store.getSorties(),
-      store.getChambres(),
-      store.getPaiements()
-    ]).then(([dashboard, stagiaires, demandes, sorties, chambres, paiements]) => {
+    store.getDashboard().then((dashboard) => {
       setSummary(dashboard)
-      setAllStagiaires(stagiaires)
-      setAllDemandes(demandes)
-      setAllSorties(sorties)
-      setAllChambres(chambres)
-      setAllPaiements(paiements)
+      setAllStagiaires(dashboard.recent_stagiaires || [])
+      setAllDemandes([])
+      setAllSorties(dashboard.recent_sorties || [])
+      setAllChambres(dashboard.recent_chambres || [])
+      setAllPaiements(dashboard.recent_paiements || [])
     }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 

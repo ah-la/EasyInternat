@@ -194,13 +194,21 @@ const mapProfile = (row = {}) => ({
   sorties: (row.sorties || []).map(mapSortie)
 })
 
+const mapDashboard = (row = {}) => ({
+  ...row,
+  recent_stagiaires: (row.recent_stagiaires || []).map(mapStagiaire),
+  recent_chambres: (row.recent_chambres || []).map(mapChambre),
+  recent_sorties: (row.recent_sorties || []).map(mapSortie),
+  recent_paiements: (row.recent_paiements || []).map(mapPaiement)
+})
+
 async function list(path, mapper, params = {}) {
   const { data } = await api.get(path, { params: cleanParams(params) })
   return unwrap(data).map(mapper)
 }
 
 export const store = {
-  getDashboard: async () => (await api.get('/dashboard')).data,
+  getDashboard: async () => mapDashboard((await api.get('/dashboard')).data),
 
   getStagiaires: (params) => list('/stagiaires', mapStagiaire, params),
   getStagiaireProfile: async (id) => mapProfile((await api.get(`/stagiaires/${id}/profile`)).data),

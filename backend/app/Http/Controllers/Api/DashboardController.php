@@ -24,8 +24,9 @@ class DashboardController extends Controller
         $paiements = Paiement::query()->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)));
         $reclamations = Reclamation::query()->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)));
         $sorties = Sortie::query()->whereHas('stagiaire', fn ($q) => $q->when($category, fn ($x) => $x->where('category', $category)));
-        $paymentStagiaires = (clone $stagiaires)->with('paiements')->get();
-        $latePayments = $this->paymentStatus->lateCount($paymentStagiaires);
+        $latePayments = $this->latePaymentsCount($category);
+        $recentStagiaires = (clone $stagiaires)->with('chambre', 'user', 'paiements')->latest()->limit(4)->get()
+            ->map(fn (Stagiaire $stagiaire) => $this->paymentStatus->decorate($stagiaire));
 
         return response()->json([
             'stagiaires' => (clone $stagiaires)->count(),
@@ -46,7 +47,29 @@ class DashboardController extends Controller
                 sorties: clone $sorties,
                 latePayments: $latePayments
             ),
+            'recent_stagiaires' => $recentStagiaires,
+            'recent_chambres' => (clone $chambres)->with('stagiaires')->withCount('stagiaires')->orderBy('numero')->limit(4)->get(),
+            'recent_sorties' => (clone $sorties)->with('stagiaire.chambre')->latest()->limit(4)->get(),
+            'recent_paiements' => (clone $paiements)->with('stagiaire.chambre')->latest()->limit(4)->get(),
         ]);
+    }
+
+    private function latePaymentsCount(?string $category): int
+    {
+        if (now()->day <= 10) {
+            return 0;
+        }
+
+        $coveredMonths = collect(range((int) now()->month, 12))
+            ->map(fn (int $month) => $this->monthLabel(now()->month($month)))
+            ->all();
+
+        return Stagiaire::query()
+            ->when($category, fn ($q) => $q->where('category', $category))
+            ->whereDoesntHave('paiements', fn ($q) => $q
+                ->where('statut', 'paye')
+                ->whereIn('mois', $coveredMonths))
+            ->count();
     }
 
     private function monthlyActivity(?string $category): Collection

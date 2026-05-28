@@ -13,7 +13,10 @@ class AuthController extends Controller
     {
         $request->validate(['email' => 'required|email', 'password' => 'required']);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::query()
+            ->select(['id', 'name', 'email', 'password', 'role', 'category', 'is_active', 'last_login_at'])
+            ->where('email', $request->email)
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['message' => 'Identifiants incorrects'], 401);
@@ -26,7 +29,7 @@ class AuthController extends Controller
         $user->forceFill(['last_login_at' => now()])->save();
 
         return response()->json([
-            'user' => $user,
+            'user' => $user->makeHidden(['password']),
             'token' => $user->createToken('api-token')->plainTextToken,
         ]);
     }
