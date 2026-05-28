@@ -149,6 +149,48 @@ class SecurityAndDashboardTest extends TestCase
         $this->deleteJson("/api/sorties/{$boySortie->id}")->assertNoContent();
     }
 
+    public function test_reclamations_are_role_scoped_and_store_response_history(): void
+    {
+        $responsable = User::factory()->create(['role' => 'responsable', 'category' => 'filles']);
+        $girlsRoom = Chambre::factory()->create(['category' => 'filles']);
+        $boysRoom = Chambre::factory()->create(['category' => 'garcons']);
+        $girl = Stagiaire::factory()->filles()->create(['chambre_id' => $girlsRoom->id]);
+        $boy = Stagiaire::factory()->garcons()->create(['chambre_id' => $boysRoom->id]);
+
+        $girlReclamation = Reclamation::factory()->create([
+            'stagiaire_id' => $girl->id,
+            'priorite' => 'urgente',
+            'statut' => 'en_attente',
+        ]);
+        Reclamation::factory()->create([
+            'stagiaire_id' => $boy->id,
+            'priorite' => 'normale',
+            'statut' => 'en_attente',
+        ]);
+
+        Sanctum::actingAs($responsable);
+
+        $this->getJson('/api/reclamations')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.stagiaire.category', 'filles')
+            ->assertJsonPath('data.0.priorite', 'urgente');
+
+        $this->putJson("/api/reclamations/{$girlReclamation->id}", [
+            'reponse_admin' => 'Intervention programmee.',
+            'statut' => 'en_cours',
+        ])
+            ->assertOk()
+            ->assertJsonPath('statut', 'en_cours')
+            ->assertJsonPath('reponse_by.name', $responsable->name);
+
+        $this->assertDatabaseHas('reclamations', [
+            'id' => $girlReclamation->id,
+            'reponse_by_id' => $responsable->id,
+        ]);
+        $this->assertNotNull($girlReclamation->fresh()->reponse_at);
+    }
+
     public function test_public_demande_requires_center_candidate_and_uses_center_data(): void
     {
         Storage::fake('public');

@@ -9,10 +9,19 @@ class Reclamation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['stagiaire_id', 'type', 'sujet', 'message', 'reponse_admin', 'statut'];
+    protected $fillable = ['stagiaire_id', 'type', 'sujet', 'message', 'priorite', 'reponse_admin', 'reponse_at', 'reponse_by_id', 'statut'];
+
+    protected $casts = [
+        'reponse_at' => 'datetime',
+    ];
 
     public function stagiaire()
     {
         return $this->belongsTo(Stagiaire::class);
+    }
+
+    public function reponseBy()
+    {
+        return $this->belongsTo(User::class, 'reponse_by_id');
     }
 }

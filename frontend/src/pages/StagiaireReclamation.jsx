@@ -10,7 +10,8 @@ import { store } from '../lib/store.js'
 const emptyForm = {
   type: 'Chambre',
   sujet: '',
-  message: ''
+  message: '',
+  priorite: 'normale'
 }
 
 export default function StagiaireReclamation() {
@@ -53,9 +54,15 @@ export default function StagiaireReclamation() {
         <form onSubmit={submit} className="mt-6 space-y-4">
           <select className="input" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>
             <option>Chambre</option>
+            <option>Maintenance</option>
             <option>Securite</option>
             <option>Restauration</option>
             <option>Autre</option>
+          </select>
+          <select className="input" value={form.priorite} onChange={(event) => setForm({ ...form, priorite: event.target.value })}>
+            <option value="normale">Priorite normale</option>
+            <option value="urgente">Priorite urgente</option>
+            <option value="faible">Priorite faible</option>
           </select>
           <input required className="input" placeholder="Sujet" value={form.sujet} onChange={(event) => setForm({ ...form, sujet: event.target.value })} />
           <textarea required className="input min-h-36 resize-y" placeholder="Message" value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} />

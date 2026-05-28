@@ -17,6 +17,7 @@ class ReclamationFactory extends Factory
             'type' => $type,
             'sujet' => $type === 'Chambre' ? 'Probleme chambre' : 'Demande de suivi',
             'message' => fake()->sentence(12),
+            'priorite' => fake()->randomElement(['urgente', 'normale', 'faible']),
             'reponse_admin' => null,
             'statut' => fake()->randomElement(['en_attente', 'en_cours', 'traitee']),
         ];

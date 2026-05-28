@@ -43,6 +43,20 @@ export function statusToApi(value = '') {
   return 'en_attente'
 }
 
+export function reclamationStatusLabel(value = '') {
+  const normalized = String(value).toLowerCase()
+  if (normalized === 'traitee' || normalized.includes('trait')) return 'Traitee'
+  if (normalized === 'en_cours' || normalized.includes('cours')) return 'En cours'
+  return 'En attente'
+}
+
+export function priorityLabel(value = '') {
+  const normalized = String(value).toLowerCase()
+  if (normalized.includes('urgent')) return 'Urgente'
+  if (normalized.includes('faible')) return 'Faible'
+  return 'Normale'
+}
+
 export function demandeStatusLabel(value = '') {
   const normalized = String(value).toLowerCase()
   if (normalized === 'acceptee' || normalized.includes('accept')) return 'Acceptée'
@@ -171,8 +185,15 @@ const mapReclamation = (row = {}) => ({
   chambre: row.stagiaire?.chambre?.numero || '',
   categorie: categoryToLabel(row.stagiaire?.category),
   email: row.stagiaire?.user?.email || '',
-  date: row.created_at ? String(row.created_at).slice(0, 10) : '',
-  priorite: row.priorite || 'Normale'
+  date: formatDate(row.created_at),
+  heure: row.created_at ? String(row.created_at).slice(11, 16) : '',
+  created_at_label: row.created_at ? `${formatDate(row.created_at)} ${String(row.created_at).slice(11, 16)}` : '',
+  reponse_at_label: row.reponse_at ? `${formatDate(row.reponse_at)} ${String(row.reponse_at).slice(11, 16)}` : '',
+  reponse_by: row.reponse_by?.name || row.reponseBy?.name || '',
+  statut_api: row.statut || 'en_attente',
+  statut: reclamationStatusLabel(row.statut),
+  priorite_api: row.priorite || 'normale',
+  priorite: priorityLabel(row.priorite)
 })
 
 const mapProfile = (row = {}) => ({
