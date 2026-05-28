@@ -21,6 +21,17 @@ export function categoryToGenre(category = '') {
   return category === 'filles' ? 'Fille' : 'Garcon'
 }
 
+function dateRaw(value = '') {
+  return value ? String(value).slice(0, 10) : ''
+}
+
+function formatDate(value = '') {
+  const raw = dateRaw(value)
+  if (!raw) return ''
+  const [year, month, day] = raw.split('-')
+  return [day, month, year].filter(Boolean).join('/')
+}
+
 export function statusToApi(value = '') {
   const normalized = String(value).toLowerCase()
   if (normalized.includes('retard')) return 'en_retard'
@@ -135,8 +146,10 @@ const mapSortie = (row = {}) => ({
   chambre: row.stagiaire?.chambre?.numero || '',
   categorie: categoryToLabel(row.stagiaire?.category),
   telephone: row.stagiaire?.telephone || row.contact || '',
-  dateSortie: row.date_sortie,
-  dateRetour: row.date_retour,
+  dateSortie: formatDate(row.date_sortie),
+  dateRetour: formatDate(row.date_retour),
+  dateSortieRaw: dateRaw(row.date_sortie),
+  dateRetourRaw: dateRaw(row.date_retour),
   motif: row.motif || '',
   statut_api: row.statut_effectif || row.statut,
   statut:
