@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CalendarClock, LogOut, Send } from 'lucide-react'
+import { CalendarClock, Eye, LogOut, Send, X } from 'lucide-react'
 import { toast } from 'sonner'
 import DataTable from '../components/DataTable.jsx'
 import StagiaireMiniProfile from '../components/StagiaireMiniProfile.jsx'
@@ -16,12 +16,56 @@ const emptyForm = {
   message: ''
 }
 
+const reclamationTypes = ['Chambre', 'Maintenance', 'Securite', 'Nourriture', 'Autre']
+
+function ResponseModal({ reclamation, onClose }) {
+  if (!reclamation) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-primary/35 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-xl rounded-3xl border border-sky-100 bg-white p-5 shadow-[0_24px_70px_rgba(7,59,92,0.22)]">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-secondary">Reclamation #{reclamation.id}</p>
+            <h2 className="mt-1 text-xl font-black text-primary">{reclamation.sujet}</h2>
+          </div>
+          <button type="button" onClick={onClose} className="grid h-10 w-10 place-items-center rounded-xl border border-sky-100 bg-white text-primary shadow-subtle transition hover:bg-cyan-soft" title="Fermer">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-3">
+          <div className="rounded-2xl border border-sky-50 bg-cyan-soft/35 p-4">
+            <p className="text-xs font-black uppercase text-muted">Statut</p>
+            <div className="mt-2">
+              <Badge tone={statusTone(reclamation.statut)}>{reclamation.statut}</Badge>
+            </div>
+          </div>
+          <div>
+            <p className="text-sm font-black text-primary">Reponse admin</p>
+            <p className="mt-2 whitespace-pre-wrap rounded-2xl border border-sky-50 bg-white p-4 text-sm font-semibold leading-7 text-slate-700 shadow-subtle">
+              {reclamation.reponse_admin || 'Aucune reponse pour le moment.'}
+            </p>
+          </div>
+          {reclamation.reponse_at_label ? (
+            <p className="text-xs font-bold text-muted">
+              Repondu le {reclamation.reponse_at_label}
+              {reclamation.reponse_by ? ` par ${reclamation.reponse_by}` : ''}
+            </p>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function StagiaireReclamation() {
   const [form, setForm] = useState(emptyForm)
   const [profile, setProfile] = useState(null)
   const [reclamations, setReclamations] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [selectedResponse, setSelectedResponse] = useState(null)
   const navigate = useNavigate()
 
   const loadData = async () => {
@@ -74,7 +118,7 @@ export default function StagiaireReclamation() {
         sujet: form.sujet.trim(),
         message: form.message.trim()
       })
-      toast.success('Reclamation envoyee.')
+      toast.success('Reclamation envoyee avec succes.')
       setReclamations((current) => [created, ...current])
       setForm(emptyForm)
     } catch (error) {
@@ -105,21 +149,23 @@ export default function StagiaireReclamation() {
       accessorKey: 'reponse_admin',
       header: 'Reponse admin',
       cell: ({ row }) => (
-        <div className="max-w-sm">
-          <p className="font-semibold text-slate-700">{row.original.reponse_admin || '-'}</p>
-          {row.original.reponse_at_label ? (
-            <p className="mt-1 text-xs font-bold text-muted">
-              {row.original.reponse_at_label}
-              {row.original.reponse_by ? ` par ${row.original.reponse_by}` : ''}
-            </p>
-          ) : null}
+        <div className="flex flex-col items-start gap-2">
+          <p className="max-h-12 max-w-xs overflow-hidden font-semibold leading-6 text-slate-700">{row.original.reponse_admin || '-'}</p>
+          <button
+            type="button"
+            onClick={() => setSelectedResponse(row.original)}
+            className="inline-flex items-center gap-2 rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs font-black text-primary shadow-subtle transition hover:-translate-y-0.5 hover:bg-cyan-soft"
+          >
+            <Eye className="h-4 w-4" />
+            Voir reponse
+          </button>
         </div>
       )
     }
   ], [])
 
   return (
-    <div className="app-shell min-h-screen bg-bg p-6 text-text">
+    <div className="app-shell min-h-screen bg-bg p-4 text-text sm:p-6">
       <div className="mx-auto mb-4 flex w-full max-w-xl flex-wrap justify-end gap-2">
         <Button as={Link} to="/stagiaire/sortie" variant="secondary">
           <CalendarClock className="h-4 w-4" />
@@ -139,17 +185,13 @@ export default function StagiaireReclamation() {
         <StagiaireMiniProfile profile={profile} />
       </div>
 
-      <Card className="mx-auto w-full max-w-xl p-8 transition duration-300 hover:shadow-lg">
+      <Card className="mx-auto w-full max-w-xl p-5 transition duration-300 hover:shadow-lg sm:p-8">
         <h1 className="text-3xl font-bold text-primary">Nouvelle reclamation</h1>
         <p className="mt-2 text-sm text-muted">Decrivez le probleme pour faciliter son traitement.</p>
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <select className="input" value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}>
-            <option>Chambre</option>
-            <option>Maintenance</option>
-            <option>Securite</option>
-            <option>Restauration</option>
-            <option>Autre</option>
+            {reclamationTypes.map((type) => <option key={type}>{type}</option>)}
           </select>
           <input required className="input" placeholder="Sujet" value={form.sujet} onChange={(event) => setForm({ ...form, sujet: event.target.value })} />
           <textarea required className="input min-h-36 resize-y" placeholder="Message" value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} />
@@ -162,16 +204,17 @@ export default function StagiaireReclamation() {
 
       <div className="mx-auto mt-6 w-full max-w-4xl">
         <DataTable
-          title="Mes reclamations"
+          title="Suivi des reclamations"
           columns={columns}
           rows={reclamations}
           loading={loading}
           emptyMessage="Aucune reclamation envoyee"
           searchable={false}
           pageSize={5}
-          exportBeforeActions
+          showExport={false}
         />
       </div>
+      <ResponseModal reclamation={selectedResponse} onClose={() => setSelectedResponse(null)} />
     </div>
   )
 }

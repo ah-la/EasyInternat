@@ -69,7 +69,7 @@ export default function StagiaireSortie() {
         date_retour: form.dateRetour,
         motif: form.motif === 'Autre' ? form.motifAutre.trim() : form.motif
       })
-      toast.success('Sortie enregistree et envoyee au responsable.')
+      toast.success('Sortie declaree avec succes.')
       setForm(emptyForm)
     } catch (error) {
       toast.error(error.response?.data?.message || "La sortie n'a pas pu etre envoyee.")
@@ -79,7 +79,7 @@ export default function StagiaireSortie() {
   }
 
   return (
-    <div className="app-shell min-h-screen bg-bg p-6 text-text">
+    <div className="app-shell min-h-screen bg-bg p-4 text-text sm:p-6">
       <div className="mx-auto mb-4 flex w-full max-w-2xl flex-wrap justify-end gap-2">
         <Button as={Link} to="/stagiaire/reclamation" variant="secondary">
           <MessageSquareText className="h-4 w-4" />
@@ -99,7 +99,7 @@ export default function StagiaireSortie() {
         <StagiaireMiniProfile profile={profile} />
       </div>
 
-      <Card className="mx-auto w-full max-w-2xl p-8">
+      <Card className="mx-auto w-full max-w-2xl p-5 sm:p-8">
         <div className="mb-6 text-center">
           <div className="mx-auto grid h-14 w-14 place-items-center rounded-lg bg-cyan-soft text-primary">
             <CalendarClock className="h-7 w-7" />
@@ -139,7 +139,7 @@ export default function StagiaireSortie() {
 
           <Button type="submit" disabled={submitting} className="sm:col-span-2 transition duration-300 hover:-translate-y-0.5">
             <Send className="h-4 w-4" />
-            {submitting ? 'Envoi en cours...' : 'Envoyer la sortie'}
+            {submitting ? 'Envoi en cours...' : 'Declarer ma sortie'}
           </Button>
         </form>
       </Card>

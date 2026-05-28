@@ -84,7 +84,8 @@ export default function DataTable({
   searchable = true,
   pageSize = 8,
   showHeading = true,
-  exportBeforeActions = false
+  exportBeforeActions = false,
+  showExport = true
 }) {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
@@ -149,9 +150,9 @@ export default function DataTable({
               className="h-11 w-full rounded-xl border border-sky-100 bg-white/90 px-3 text-sm font-semibold text-primary shadow-subtle outline-none transition placeholder:text-muted focus:border-secondary focus:ring-4 focus:ring-secondary/15 sm:w-64"
             />
           ) : null}
-          {exportBeforeActions ? exportButton : null}
+          {showExport && exportBeforeActions ? exportButton : null}
           {actions}
-          {!exportBeforeActions ? exportButton : null}
+          {showExport && !exportBeforeActions ? exportButton : null}
           {filters}
         </div>
       </div>

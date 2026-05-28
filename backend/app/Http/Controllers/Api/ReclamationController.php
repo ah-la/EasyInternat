@@ -63,7 +63,7 @@ class ReclamationController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'type' => 'required|string|max:100',
+            'type' => 'required|string|in:Chambre,Maintenance,Securite,Nourriture,Autre',
             'sujet' => 'required|string|min:3|max:255',
             'message' => 'required|string|min:10',
         ]);

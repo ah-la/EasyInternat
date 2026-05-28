@@ -8,10 +8,10 @@ export default function StagiaireMiniProfile({ profile }) {
     profile.chambre || 'Sans chambre',
     profile.categorie || '',
     profile.annee || '1ere annee'
-  ].filter(Boolean).join(' • ')
+  ].filter(Boolean).join(' - ')
 
   return (
-    <Card className="mx-auto mb-4 flex w-full items-center gap-4 p-4 transition duration-300 hover:-translate-y-0.5 hover:shadow-lg">
+    <Card className="mx-auto mb-4 flex w-full flex-col items-start gap-3 p-4 transition duration-300 hover:-translate-y-0.5 hover:shadow-lg sm:flex-row sm:items-center">
       <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-cyan-soft text-primary">
         <UserRound className="h-7 w-7" />
       </div>
