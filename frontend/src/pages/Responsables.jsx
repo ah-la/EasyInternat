@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Eye, Pencil, Plus, Power, PowerOff, ShieldCheck, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -58,6 +58,7 @@ export default function Responsables() {
   const [loading, setLoading] = useState(true)
   const [statusTarget, setStatusTarget] = useState(null)
   const [selected, setSelected] = useState(null)
+  const [filter, setFilter] = useState('Tous')
 
   const loadRows = () => {
     setLoading(true)
@@ -82,11 +83,27 @@ export default function Responsables() {
     }
   }
 
+  const filteredRows = useMemo(() => {
+    if (filter === 'Filles') return rows.filter((row) => row.categorie === 'Filles')
+    if (filter === 'Garcons') return rows.filter((row) => row.categorie === 'Garcons')
+    if (filter === 'Actif') return rows.filter((row) => row.is_active)
+    if (filter === 'Inactif') return rows.filter((row) => !row.is_active)
+    return rows
+  }, [filter, rows])
+
   const columns = [
     { accessorKey: 'nom', header: 'Nom' },
     { accessorKey: 'email', header: 'Email' },
     { accessorKey: 'telephone', header: 'Telephone' },
-    { accessorKey: 'roleLabel', header: 'Role' },
+    {
+      accessorKey: 'roleLabel',
+      header: 'Role',
+      cell: ({ row }) => (
+        <Badge tone={row.original.categorie === 'Filles' ? 'info' : 'success'}>
+          {row.original.roleLabel}
+        </Badge>
+      )
+    },
     { accessorKey: 'categorie', header: 'Categorie' },
     { accessorKey: 'last_login', header: 'Derniere connexion' },
     { accessorKey: 'managed_count', header: 'Stagiaires geres' },
@@ -135,9 +152,23 @@ export default function Responsables() {
       <DataTable
         title="Responsables"
         columns={columns}
-        rows={rows}
+        rows={filteredRows}
         loading={loading}
         showHeading={false}
+        filters={
+          <select
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            className="h-11 rounded-xl border border-sky-100 bg-white/90 px-3 text-sm font-semibold text-primary shadow-subtle outline-none transition focus:border-secondary focus:ring-4 focus:ring-secondary/15"
+            title="Filtrer responsables"
+          >
+            <option>Tous</option>
+            <option>Filles</option>
+            <option>Garcons</option>
+            <option>Actif</option>
+            <option>Inactif</option>
+          </select>
+        }
         actions={
           <Button as={Link} to="/admin/responsables/new">
             <Plus className="h-4 w-4" />
@@ -153,8 +184,8 @@ export default function Responsables() {
         title={statusTarget?.is_active ? 'Desactiver responsable' : 'Activer responsable'}
         message={
           statusTarget?.is_active
-            ? `${statusTarget?.nom} ne pourra plus se connecter. Continuer ?`
-            : `${statusTarget?.nom} pourra se connecter a nouveau. Continuer ?`
+            ? `Voulez-vous desactiver ce responsable ? ${statusTarget?.nom} ne pourra plus se connecter.`
+            : `Voulez-vous activer ce responsable ? ${statusTarget?.nom} pourra se connecter a nouveau.`
         }
         confirmLabel={statusTarget?.is_active ? 'Desactiver' : 'Activer'}
         cancelLabel="Annuler"

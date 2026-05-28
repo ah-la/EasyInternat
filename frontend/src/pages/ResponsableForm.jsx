@@ -37,7 +37,15 @@ export default function ResponsableForm() {
     }
     store.getResponsables().then((rows) => {
       const current = rows.find((row) => row.id === id)
-      if (current) setForm({ ...emptyForm, ...current, password: '', password_confirmation: '' })
+      if (current) {
+        setForm({
+          ...emptyForm,
+          ...current,
+          roleLabel: current.roleValue || (current.categorie === 'Filles' ? 'responsable_filles' : 'responsable_garcons'),
+          password: '',
+          password_confirmation: ''
+        })
+      }
     })
   }, [id, isEditing])
 
@@ -107,9 +115,13 @@ export default function ResponsableForm() {
         <label className="block">
           <span className="mb-2 block text-sm font-semibold text-primary">Role</span>
           <select className="input" value={form.roleLabel} onChange={(event) => setRole(event.target.value)}>
-            <option value="responsable_filles">responsable_filles</option>
-            <option value="responsable_garcons">responsable_garcons</option>
+            <option value="responsable_filles">Responsable filles</option>
+            <option value="responsable_garcons">Responsable garcons</option>
           </select>
+        </label>
+        <label className="block">
+          <span className="mb-2 block text-sm font-semibold text-primary">Categorie</span>
+          <input className="input bg-slate-50" value={form.categorie} readOnly />
         </label>
         <label className="block">
           <span className="mb-2 block text-sm font-semibold text-primary">Statut</span>
@@ -118,7 +130,6 @@ export default function ResponsableForm() {
             <option>Inactif</option>
           </select>
         </label>
-        <div className="hidden md:block" />
 
         <label className="block">
           <span className="mb-2 block text-sm font-semibold text-primary">Mot de passe</span>
@@ -155,7 +166,7 @@ export default function ResponsableForm() {
           <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />
             <p>
-              Ce responsable peut gerer uniquement les stagiaires, chambres, paiements, sorties et reclamations de sa categorie.
+              Ce responsable peut gerer uniquement les stagiaires, chambres, paiements, presences et reclamations de sa categorie.
             </p>
           </div>
         </div>
