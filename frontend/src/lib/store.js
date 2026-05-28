@@ -204,6 +204,7 @@ export const store = {
 
   getStagiaires: (params) => list('/stagiaires', mapStagiaire, params),
   getStagiaireProfile: async (id) => mapProfile((await api.get(`/stagiaires/${id}/profile`)).data),
+  getMyProfile: async () => mapProfile((await api.get('/stagiaire/profile')).data),
   createStagiaire: async (payload) => mapStagiaire((await api.post('/stagiaires', payload)).data),
   updateStagiaire: async (id, payload) => mapStagiaire((await api.put(`/stagiaires/${id}`, payload)).data),
   deleteStagiaire: (id) => api.delete(`/stagiaires/${id}`),

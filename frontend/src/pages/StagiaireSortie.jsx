@@ -1,39 +1,80 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CalendarClock, LogOut, MessageSquareText, Send } from 'lucide-react'
 import { toast } from 'sonner'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
+import StagiaireMiniProfile from '../components/StagiaireMiniProfile.jsx'
 import { clearCurrentRole } from '../lib/authRole.js'
 import { store } from '../lib/store.js'
 
 const emptyForm = {
   dateSortie: '',
   dateRetour: '',
-  motif: ''
+  motif: 'Weekend',
+  motifAutre: ''
 }
+
+const motifOptions = ['Weekend', 'Famille', 'Maladie', 'Vacances', 'Autre']
 
 export default function StagiaireSortie() {
   const [form, setForm] = useState(emptyForm)
+  const [profile, setProfile] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    store.getMyProfile()
+      .then(setProfile)
+      .catch(() => setProfile(null))
+  }, [])
 
   const logout = () => {
     clearCurrentRole()
     navigate('/', { replace: true })
   }
 
+  const validate = () => {
+    if (!form.dateSortie) {
+      toast.error('Date sortie obligatoire.')
+      return false
+    }
+
+    if (!form.dateRetour) {
+      toast.error('Date retour obligatoire.')
+      return false
+    }
+
+    if (form.dateRetour < form.dateSortie) {
+      toast.error('Date retour doit etre apres la date sortie.')
+      return false
+    }
+
+    if (form.motif === 'Autre' && form.motifAutre.trim().length < 5) {
+      toast.error('Message trop court pour le motif.')
+      return false
+    }
+
+    return true
+  }
+
   const submit = async (event) => {
     event.preventDefault()
+    if (!validate()) return
+
+    setSubmitting(true)
     try {
       await store.createSortie({
         date_sortie: form.dateSortie,
         date_retour: form.dateRetour,
-        motif: form.motif
+        motif: form.motif === 'Autre' ? form.motifAutre.trim() : form.motif
       })
       toast.success('Sortie enregistree et envoyee au responsable.')
       setForm(emptyForm)
     } catch (error) {
       toast.error(error.response?.data?.message || "La sortie n'a pas pu etre envoyee.")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -52,6 +93,10 @@ export default function StagiaireSortie() {
           <LogOut className="h-4 w-4" />
           Deconnexion
         </button>
+      </div>
+
+      <div className="mx-auto w-full max-w-2xl">
+        <StagiaireMiniProfile profile={profile} />
       </div>
 
       <Card className="mx-auto w-full max-w-2xl p-8">
@@ -76,12 +121,25 @@ export default function StagiaireSortie() {
           </label>
           <label className="block sm:col-span-2">
             <span className="mb-2 block text-sm font-semibold text-primary">Motif</span>
-            <textarea required className="input min-h-24" placeholder="Weekend, vacances, rendez-vous..." value={form.motif} onChange={(event) => setForm({ ...form, motif: event.target.value })} />
+            <select className="input" value={form.motif} onChange={(event) => setForm({ ...form, motif: event.target.value, motifAutre: '' })}>
+              {motifOptions.map((motif) => <option key={motif}>{motif}</option>)}
+            </select>
           </label>
+          {form.motif === 'Autre' ? (
+            <label className="block sm:col-span-2">
+              <span className="mb-2 block text-sm font-semibold text-primary">Precisez le motif</span>
+              <textarea
+                className="input min-h-24"
+                placeholder="Expliquez votre motif..."
+                value={form.motifAutre}
+                onChange={(event) => setForm({ ...form, motifAutre: event.target.value })}
+              />
+            </label>
+          ) : null}
 
-          <Button type="submit" className="sm:col-span-2">
+          <Button type="submit" disabled={submitting} className="sm:col-span-2 transition duration-300 hover:-translate-y-0.5">
             <Send className="h-4 w-4" />
-            Envoyer la sortie
+            {submitting ? 'Envoi en cours...' : 'Envoyer la sortie'}
           </Button>
         </form>
       </Card>

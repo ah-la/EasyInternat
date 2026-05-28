@@ -178,14 +178,52 @@ class SecurityAndDashboardTest extends TestCase
             'statut' => 'en_cours',
         ])
             ->assertOk()
-            ->assertJsonPath('statut', 'en_cours')
+            ->assertJsonPath('statut', 'traitee')
             ->assertJsonPath('reponse_by.name', $responsable->name);
 
         $this->assertDatabaseHas('reclamations', [
             'id' => $girlReclamation->id,
             'reponse_by_id' => $responsable->id,
+            'statut' => 'traitee',
         ]);
         $this->assertNotNull($girlReclamation->fresh()->reponse_at);
+    }
+
+    public function test_stagiaire_profile_and_reclamations_are_scoped_to_connected_user(): void
+    {
+        $firstUser = User::factory()->stagiaire('filles')->create();
+        $secondUser = User::factory()->stagiaire('filles')->create();
+        $room = Chambre::factory()->create(['category' => 'filles']);
+        $first = Stagiaire::factory()->filles()->create(['user_id' => $firstUser->id, 'chambre_id' => $room->id]);
+        $second = Stagiaire::factory()->filles()->create(['user_id' => $secondUser->id, 'chambre_id' => $room->id]);
+
+        Reclamation::factory()->create([
+            'stagiaire_id' => $first->id,
+            'sujet' => 'Probleme chambre',
+            'message' => 'Besoin d une intervention rapide.',
+            'reponse_admin' => 'Votre reclamation a ete traitee.',
+            'statut' => 'traitee',
+        ]);
+        Reclamation::factory()->create(['stagiaire_id' => $second->id]);
+
+        Sanctum::actingAs($firstUser);
+
+        $this->getJson('/api/stagiaire/profile')
+            ->assertOk()
+            ->assertJsonPath('id', $first->id)
+            ->assertJsonCount(1, 'reclamations')
+            ->assertJsonPath('reclamations.0.reponse_admin', 'Votre reclamation a ete traitee.');
+
+        $this->getJson('/api/reclamations')
+            ->assertOk()
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.stagiaire_id', $first->id);
+
+        $this->postJson('/api/reclamations', [
+            'type' => 'Chambre',
+            'sujet' => 'Ok',
+            'message' => 'court',
+        ])->assertUnprocessable();
     }
 
     public function test_public_demande_requires_center_candidate_and_uses_center_data(): void

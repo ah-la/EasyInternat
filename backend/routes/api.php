@@ -20,6 +20,7 @@ Route::post('/verify-candidat', [DemandeController::class, 'verifyCandidat']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/dashboard', [DashboardController::class, 'index'])->middleware('role:admin,responsable');
+    Route::get('/reclamations', [ReclamationController::class, 'index'])->middleware('role:admin,responsable,stagiaire');
 
     Route::middleware('role:admin,responsable')->group(function () {
         Route::apiResource('/demandes', DemandeController::class)->except(['store']);
@@ -31,7 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::apiResource('/chambres', ChambreController::class);
         Route::apiResource('/paiements', PaiementController::class);
         Route::apiResource('/sorties', SortieController::class)->except(['show', 'store'])->parameters(['sorties' => 'sortie']);
-        Route::apiResource('/reclamations', ReclamationController::class)->except(['store']);
+        Route::apiResource('/reclamations', ReclamationController::class)->except(['index', 'store']);
         Route::get('/pdf/{type}', [PdfController::class, 'export']);
     });
 
@@ -41,6 +42,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::middleware('role:stagiaire')->group(function () {
+        Route::get('/stagiaire/profile', [StagiaireController::class, 'myProfile']);
         Route::post('/sorties', [SortieController::class, 'store']);
         Route::post('/reclamations', [ReclamationController::class, 'store']);
     });

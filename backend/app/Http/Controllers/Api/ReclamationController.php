@@ -18,15 +18,24 @@ class ReclamationController extends Controller
             $query->whereHas('stagiaire', fn ($q) => $q->where('category', $user->category));
         }
 
+        if ($user?->role === 'stagiaire') {
+            $query->whereHas('stagiaire', fn ($q) => $q->where('user_id', $user->id));
+        }
+
         return $query;
     }
 
     private function ensureVisible(Request $request, Reclamation $reclamation): void
     {
-        $category = $request->user()?->role === 'responsable' ? $request->user()->category : null;
+        $user = $request->user();
+        $category = $user?->role === 'responsable' ? $user->category : null;
 
         if ($category && $reclamation->stagiaire?->category !== $category) {
             abort(403, 'Acces refuse pour cette categorie');
+        }
+
+        if ($user?->role === 'stagiaire' && (int) $reclamation->stagiaire?->user_id !== (int) $user->id) {
+            abort(403, 'Acces refuse pour cette reclamation');
         }
     }
 
@@ -55,8 +64,8 @@ class ReclamationController extends Controller
     {
         $data = $request->validate([
             'type' => 'required|string|max:100',
-            'sujet' => 'required|string|max:255',
-            'message' => 'required|string',
+            'sujet' => 'required|string|min:3|max:255',
+            'message' => 'required|string|min:10',
         ]);
 
         $stagiaire = $request->user()->stagiaire;
@@ -95,6 +104,7 @@ class ReclamationController extends Controller
         if (array_key_exists('reponse_admin', $data) && filled($data['reponse_admin'])) {
             $data['reponse_at'] = now();
             $data['reponse_by_id'] = $request->user()?->id;
+            $data['statut'] = 'traitee';
         }
 
         $before = $reclamation->only(['type', 'sujet', 'message', 'reponse_admin', 'reponse_at', 'reponse_by_id', 'statut']);

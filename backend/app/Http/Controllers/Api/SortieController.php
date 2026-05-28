@@ -63,7 +63,7 @@ class SortieController extends Controller
             'date_sortie' => 'required|date',
             'date_retour' => 'required|date|after_or_equal:date_sortie',
             'contact' => 'nullable|string|max:30',
-            'motif' => 'nullable|string',
+            'motif' => 'required|string|min:3|max:255',
         ]);
 
         $data['stagiaire_id'] = $request->user()->stagiaire?->id;

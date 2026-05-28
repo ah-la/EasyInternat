@@ -152,10 +152,8 @@ class StagiaireController extends Controller
         return $this->paymentStatus->decorate($stagiaire->load('chambre', 'user', 'paiements'));
     }
 
-    public function profile(Request $request, Stagiaire $stagiaire)
+    private function profilePayload(Stagiaire $stagiaire): Stagiaire
     {
-        $this->ensureVisible($request, $stagiaire);
-
         $stagiaire->load([
             'user',
             'chambre',
@@ -165,6 +163,24 @@ class StagiaireController extends Controller
         ]);
 
         return $this->paymentStatus->decorate($stagiaire);
+    }
+
+    public function profile(Request $request, Stagiaire $stagiaire)
+    {
+        $this->ensureVisible($request, $stagiaire);
+
+        return $this->profilePayload($stagiaire);
+    }
+
+    public function myProfile(Request $request)
+    {
+        $stagiaire = $request->user()->stagiaire;
+
+        if (!$stagiaire) {
+            return response()->json(['message' => 'Profil stagiaire introuvable'], 404);
+        }
+
+        return $this->profilePayload($stagiaire);
     }
 
     public function update(Request $request, Stagiaire $stagiaire)
