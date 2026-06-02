@@ -57,10 +57,23 @@ Puis copier le contenu de `frontend/dist` vers `backend/public` si necessaire. U
 
 ## Comptes demo
 
-- Admin : `admin@cmc.test` / `password`
-- Responsable filles : `filles@cmc.test` / `password`
-- Responsable garcons : `garcons@cmc.test` / `password`
-- Stagiaire : `stagiaire@cmc.test` / `password`
+| Espace | Email | Mot de passe |
+| --- | --- | --- |
+| Admin | `admin@cmc.test` | `password` |
+| Responsable filles | `filles@cmc.test` | `password` |
+| Responsable garcons | `garcons@cmc.test` | `password` |
+| Stagiaire principal | `stagiaire@cmc.test` | `password` |
+
+Autres comptes stagiaires demo avec le meme mot de passe `password` :
+
+- `bennani.salma@cmc.test`
+- `rami.imane@cmc.test`
+- `amrani.nour@cmc.test`
+- `omar.yassine@cmc.test`
+- `alaoui.mehdi@cmc.test`
+- `fassi.hamza@cmc.test`
+- `berrada.anas@cmc.test`
+- `naciri.othmane@cmc.test`
 
 ## A ne pas publier
 

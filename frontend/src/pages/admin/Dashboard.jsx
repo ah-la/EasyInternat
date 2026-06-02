@@ -236,10 +236,10 @@ export default function Dashboard() {
       </Card>
 
       <div className="grid min-w-0 gap-7 xl:grid-cols-2">
-        <DataTable title="Stagiaires recents" columns={tableColumns.stagiaires} rows={visibleStagiaires.slice(0, 4)} loading={loading} />
-        <DataTable title="Chambres" columns={tableColumns.chambres} rows={visibleChambres.slice(0, 4)} loading={loading} />
-        <DataTable title="Sorties recentes" columns={tableColumns.sorties} rows={visibleSorties.slice(0, 4)} loading={loading} />
-        <DataTable title="Paiements" columns={tableColumns.paiements} rows={visiblePaiements.slice(0, 4)} loading={loading} />
+        <DataTable title="Stagiaires recents" columns={tableColumns.stagiaires} rows={visibleStagiaires.slice(0, 4)} loading={loading} searchable={false} />
+        <DataTable title="Chambres" columns={tableColumns.chambres} rows={visibleChambres.slice(0, 4)} loading={loading} searchable={false} />
+        <DataTable title="Sorties recentes" columns={tableColumns.sorties} rows={visibleSorties.slice(0, 4)} loading={loading} searchable={false} />
+        <DataTable title="Paiements" columns={tableColumns.paiements} rows={visiblePaiements.slice(0, 4)} loading={loading} searchable={false} />
       </div>
     </motion.div>
   )
