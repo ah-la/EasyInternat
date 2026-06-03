@@ -4,17 +4,17 @@ import {
   ClipboardCheck,
   CreditCard,
   FileCheck2,
+  History,
   LayoutDashboard,
   LogOut,
   MessageSquareText,
-  Settings,
   UserCog,
-  UserRound,
   UsersRound
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { cn } from '../../lib/cn.js'
-import { clearCurrentRole, getCurrentRole, getRoleInfo } from '../../lib/authRole.js'
+import { getCurrentRole, getRoleInfo } from '../../lib/authRole.js'
+import { logoutUser } from '../../lib/logout.js'
 
 function makeItems(basePath, role) {
   return [
@@ -36,7 +36,8 @@ function makeItems(basePath, role) {
       title: 'Suivi',
       items: [
         { label: 'Sorties', to: `${basePath}/sorties`, icon: ClipboardCheck },
-        { label: 'Reclamations', to: `${basePath}/reclamations`, icon: MessageSquareText }
+        { label: 'Reclamations', to: `${basePath}/reclamations`, icon: MessageSquareText },
+        { label: 'Historique', to: '/admin/actions', icon: History, adminOnly: true }
       ]
     }
   ].filter((item) => !item.adminOnly || role === 'admin')
@@ -54,15 +55,10 @@ export default function Sidebar() {
   const sections = makeItems(basePath, role)
   const navigate = useNavigate()
 
-  const logout = () => {
-    clearCurrentRole()
+  const logout = async () => {
+    await logoutUser()
     navigate('/', { replace: true })
   }
-
-  const settingsItems = [
-    { label: 'Profil', icon: UserRound },
-    { label: 'Parametres', icon: Settings },
-  ]
 
   return (
     <aside className="sidebar-scrollbar group/sidebar fixed inset-y-0 left-0 z-30 hidden w-20 overflow-y-auto overflow-x-hidden border-r border-sky-100 bg-white/95 px-3 py-4 shadow-[18px_0_50px_rgba(14,165,233,0.08)] backdrop-blur-2xl transition-all duration-300 hover:w-72 hover:px-4 lg:block">
@@ -134,24 +130,8 @@ export default function Sidebar() {
         ))}
 
         <div>
-          <p className="mb-2 hidden px-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 group-hover/sidebar:block">Parametres</p>
+          <p className="mb-2 hidden px-3 text-[11px] font-black uppercase tracking-[0.18em] text-slate-400 group-hover/sidebar:block">Session</p>
           <div className="space-y-1">
-            {settingsItems.map(({ label, icon: Icon }) => (
-              <button
-                key={label}
-                type="button"
-                title={label}
-                className="group relative flex h-10 w-full items-center gap-3 overflow-visible rounded-xl px-2 text-sm font-bold text-slate-500 transition-all duration-200 hover:translate-x-1 hover:bg-cyan-soft/80 hover:text-primary group-hover/sidebar:px-3"
-              >
-                <span className="relative z-10 grid h-8 w-8 place-items-center rounded-xl bg-slate-50 transition group-hover:bg-white group-hover:text-secondary">
-                  <Icon className="h-4 w-4" />
-                </span>
-                <span className="relative z-10 whitespace-nowrap opacity-0 transition-opacity duration-200 group-hover/sidebar:opacity-100">{label}</span>
-                <span className="pointer-events-none absolute left-14 z-30 hidden rounded-xl border border-sky-100 bg-white px-3 py-2 text-xs font-black text-primary shadow-[0_16px_32px_rgba(7,59,92,0.14)] group-hover:flex group-hover/sidebar:hidden">
-                  {label}
-                </span>
-              </button>
-            ))}
             <button
               type="button"
               onClick={logout}

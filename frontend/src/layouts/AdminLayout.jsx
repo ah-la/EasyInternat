@@ -25,6 +25,7 @@ function pageTitle(pathname, role) {
   if (clean.startsWith('/admin/demandes')) return 'Demandes'
   if (clean.startsWith('/admin/sorties')) return 'Registre des sorties'
   if (clean.startsWith('/admin/reclamations')) return 'Reclamations'
+  if (clean.startsWith('/admin/actions')) return 'Historique des actions'
   return 'Dashboard'
 }
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\{Chambre, Stagiaire, User};
 use App\Services\PaymentStatusService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class StagiaireController extends Controller
@@ -242,7 +243,18 @@ class StagiaireController extends Controller
     public function destroy(Request $request, Stagiaire $stagiaire)
     {
         $this->ensureVisible($request, $stagiaire);
-        $stagiaire->delete();
+
+        DB::transaction(function () use ($stagiaire) {
+            $user = $stagiaire->user;
+
+            $stagiaire->delete();
+
+            if ($user && $user->role === 'stagiaire' && !$user->stagiaire()->exists()) {
+                $user->tokens()->delete();
+                $user->delete();
+            }
+        });
+
         return response()->noContent();
     }
 }

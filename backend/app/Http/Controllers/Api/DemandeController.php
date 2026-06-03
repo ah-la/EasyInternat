@@ -95,7 +95,10 @@ class DemandeController extends Controller
             return response()->json(['message' => 'Candidat non trouvé au centre'], 403);
         }
 
-        if (Demande::where('cin', $data['cin'])->exists()) {
+        if (Demande::where('cin', $data['cin'])
+            ->orWhere('email', $data['email'])
+            ->orWhere('numero_inscription', $data['numero_inscription'])
+            ->exists()) {
             return response()->json(['message' => 'Vous avez déjà envoyé une demande.'], 422);
         }
 

@@ -31,19 +31,38 @@ function normalizeColumns(columns, rows) {
   }))
 }
 
-function exportExcel(title, rows) {
+function exportExcel(title, rows, columns = []) {
   const cleanRows = (rows || []).filter((row) => !row.isDetails)
-  const keys = Object.keys(cleanRows?.[0] || {}).filter((key) => !['detailsNode', 'isDetails'].includes(key))
-  const escape = (value) => `"${String(Array.isArray(value) ? value.join(', ') : value ?? '').replace(/"/g, '""')}"`
-  const content = [
-    keys.map(escape).join(';'),
-    ...cleanRows.map((row) => keys.map((key) => escape(row[key])).join(';'))
-  ].join('\n')
-  const blob = new Blob([`\ufeff${content}`], { type: 'text/csv;charset=utf-8;' })
+  const exportColumns = (columns || [])
+    .filter((column) => column.accessorKey && !['actions', 'detailsNode', 'isDetails'].includes(column.accessorKey))
+    .map((column) => ({
+      key: column.accessorKey,
+      header: typeof column.header === 'string' ? column.header : column.accessorKey
+    }))
+  const fallbackColumns = Object.keys(cleanRows?.[0] || {})
+    .filter((key) => !['actions', 'detailsNode', 'isDetails'].includes(key))
+    .map((key) => ({ key, header: key }))
+  const keys = exportColumns.length ? exportColumns : fallbackColumns
+  const escapeHtml = (value) =>
+    String(Array.isArray(value) ? value.join(', ') : value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+
+  const table = [
+    '<table>',
+    `<caption>${escapeHtml(title)}</caption>`,
+    `<thead><tr>${keys.map((column) => `<th>${escapeHtml(column.header)}</th>`).join('')}</tr></thead>`,
+    `<tbody>${cleanRows.map((row) => `<tr>${keys.map((column) => `<td>${escapeHtml(row[column.key])}</td>`).join('')}</tr>`).join('')}</tbody>`,
+    '</table>'
+  ].join('')
+  const content = `<!doctype html><html><head><meta charset="utf-8" /></head><body>${table}</body></html>`
+  const blob = new Blob([content], { type: 'application/vnd.ms-excel;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `${title.toLowerCase().replace(/\s+/g, '-')}.csv`
+  link.download = `${title.toLowerCase().replace(/\s+/g, '-')}.xls`
   link.click()
   URL.revokeObjectURL(url)
 }
@@ -128,7 +147,7 @@ export default function DataTable({
   const hasRows = table.getRowModel().rows.length > 0
 
   const exportButton = (
-    <Button type="button" variant="secondary" onClick={() => exportExcel(title, filteredRows)}>
+    <Button type="button" variant="secondary" onClick={() => exportExcel(title, filteredRows, tableColumns)}>
       <Download className="h-4 w-4" />
       Excel
     </Button>

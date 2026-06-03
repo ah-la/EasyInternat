@@ -1,7 +1,8 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { BedDouble, ClipboardCheck, CreditCard, FileCheck2, LayoutDashboard, LogOut, MessageSquareText, UserRound, UsersRound } from 'lucide-react'
+import { BedDouble, ClipboardCheck, CreditCard, FileCheck2, History, LayoutDashboard, LogOut, MessageSquareText, UserRound, UsersRound } from 'lucide-react'
 import { cn } from '../../lib/cn.js'
-import { clearCurrentRole, getCurrentRole, getRoleInfo } from '../../lib/authRole.js'
+import { getCurrentRole, getRoleInfo } from '../../lib/authRole.js'
+import { logoutUser } from '../../lib/logout.js'
 
 function mobileItems(basePath, roleName) {
   return [
@@ -12,6 +13,7 @@ function mobileItems(basePath, roleName) {
     { label: 'Paiements', to: `${basePath}/paiements`, icon: CreditCard },
     { label: 'Sorties', to: `${basePath}/sorties`, icon: ClipboardCheck },
     { label: 'Reclamations', to: `${basePath}/reclamations`, icon: MessageSquareText },
+    { label: 'Historique', to: '/admin/actions', icon: History, adminOnly: true },
     { label: 'Responsables', to: '/admin/responsables', icon: UsersRound, adminOnly: true }
   ].filter((item) => !item.adminOnly || roleName === 'admin')
 }
@@ -23,8 +25,8 @@ export default function Topbar({ title = 'Dashboard' }) {
   const role = getRoleInfo(roleName)
   const basePath = roleName === 'admin' ? '/admin' : '/responsable'
 
-  const logout = () => {
-    clearCurrentRole()
+  const logout = async () => {
+    await logoutUser()
     navigate('/', { replace: true })
   }
 

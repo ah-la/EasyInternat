@@ -72,10 +72,22 @@ class SecurityAndDashboardTest extends TestCase
             'id' => $response->json('id'),
             'stagiaire_id' => $first->id,
         ]);
+
+        $this->postJson('/api/sorties', [
+            'date_sortie' => now()->toDateString(),
+            'heure_sortie' => '10:00',
+            'date_retour' => now()->addDay()->toDateString(),
+            'heure_retour_prevue' => '19:00',
+            'contact' => '0600000000',
+            'motif' => 'Deuxieme sortie',
+        ])->assertUnprocessable()
+            ->assertJsonPath('message', 'Vous avez deja une sortie active.');
     }
 
     public function test_dashboard_returns_role_scoped_notifications(): void
     {
+        $this->travelTo(now()->setDay(15));
+
         $responsable = User::factory()->create([
             'role' => 'responsable',
             'category' => 'filles',
@@ -264,6 +276,26 @@ class SecurityAndDashboardTest extends TestCase
             ->assertJsonPath('genre', 'Fille')
             ->assertJsonPath('filiere', 'Developpement Digital');
 
+        StagiaireCentre::create([
+            'nom' => 'Kenza',
+            'prenom' => 'Double',
+            'cin' => 'DMF9999',
+            'numero_inscription' => 'CMC-D-999',
+            'filiere' => 'Developpement Digital',
+            'genre' => 'Fille',
+        ]);
+
+        $this->postJson('/api/demandes', [
+            'nom' => 'Kenza',
+            'cin' => 'DMF9999',
+            'numero_inscription' => 'CMC-D-999',
+            'email' => 'kenza.demo@cmc.test',
+            'telephone' => '0633333309',
+            'genre' => 'Fille',
+            'filiere' => 'Developpement Digital',
+            'certificat_residence' => UploadedFile::fake()->create('certificat.pdf', 32, 'application/pdf'),
+        ])->assertUnprocessable();
+
         $this->postJson('/api/demandes', [
             'nom' => 'Inconnu',
             'cin' => 'UNKNOWN',
@@ -278,6 +310,8 @@ class SecurityAndDashboardTest extends TestCase
 
     public function test_demande_certificate_is_required_and_protected_by_role_scope(): void
     {
+        Storage::fake('public');
+
         $admin = User::factory()->create(['role' => 'admin']);
         $responsableGarcons = User::factory()->create(['role' => 'responsable', 'category' => 'garcons']);
         StagiaireCentre::create([
@@ -309,8 +343,6 @@ class SecurityAndDashboardTest extends TestCase
             'filiere' => 'Infrastructure Digitale',
             'certificat_residence' => UploadedFile::fake()->create('certificat.pdf', 32, 'application/pdf'),
         ])->assertCreated()->json('id');
-
-        Demande::find($demandeId)->update(['certificat_residence' => 'certificats/demo-DMF1002.png']);
 
         Sanctum::actingAs($responsableGarcons);
         $this->getJson("/api/demandes/{$demandeId}/certificat")->assertForbidden();
@@ -530,5 +562,27 @@ class SecurityAndDashboardTest extends TestCase
             'email' => 'responsable.test@cmc.test',
             'password' => 'secret123',
         ])->assertForbidden();
+    }
+
+    public function test_logout_deletes_current_sanctum_token(): void
+    {
+        $user = User::factory()->create([
+            'role' => 'admin',
+            'email' => 'logout.test@cmc.test',
+            'password' => Hash::make('secret123'),
+        ]);
+
+        $token = $this->postJson('/api/login', [
+            'email' => 'logout.test@cmc.test',
+            'password' => 'secret123',
+        ])->assertOk()->json('token');
+
+        $this->assertSame(1, $user->tokens()->count());
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->postJson('/api/logout')
+            ->assertOk();
+
+        $this->assertSame(0, $user->tokens()->count());
     }
 }

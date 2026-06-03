@@ -4,20 +4,19 @@ import { getHomePath, normalizeRole, setAuthSession } from './authRole.js'
 export async function loginUser({ email, password, expectedRole }) {
   const cleanEmail = email.trim().toLowerCase()
 
-  try {
-    const { data } = await api.post('/login', { email: cleanEmail, password })
-    const role = normalizeRole(data.user)
+  const { data } = await api.post('/login', { email: cleanEmail, password }).catch((error) => {
+    throw new Error(error.response?.data?.message || 'Identifiants incorrects')
+  })
 
-    if (expectedRole && role !== expectedRole) {
-      throw new Error('role_mismatch')
-    }
+  const role = normalizeRole(data.user)
 
-    sessionStorage.setItem('token', data.token)
-    setAuthSession(role, data.user)
-    return { role, user: data.user }
-  } catch (error) {
-    throw new Error('Identifiants incorrects')
+  if (expectedRole && role !== expectedRole) {
+    throw new Error("Ce compte n'a pas le role demande.")
   }
+
+  sessionStorage.setItem('token', data.token)
+  setAuthSession(role, data.user)
+  return { role, user: data.user }
 }
 
 export function destinationForRole(role) {

@@ -19,6 +19,7 @@ const Reclamations = lazy(() => import('./pages/Reclamations.jsx'))
 const Responsables = lazy(() => import('./pages/Responsables.jsx'))
 const ResponsableForm = lazy(() => import('./pages/ResponsableForm.jsx'))
 const Demandes = lazy(() => import('./pages/Demandes.jsx'))
+const Actions = lazy(() => import('./pages/Actions.jsx'))
 const StagiaireSortie = lazy(() => import('./pages/StagiaireSortie.jsx'))
 const StagiaireReclamation = lazy(() => import('./pages/StagiaireReclamation.jsx'))
 
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="responsables" element={<Responsables />} />
             <Route path="responsables/new" element={<ResponsableForm />} />
             <Route path="responsables/:id/edit" element={<ResponsableForm />} />
+            <Route path="actions" element={<Actions />} />
           </Route>
         </Route>
 

@@ -14,6 +14,7 @@ New-Item -ItemType Directory -Force $assetsPath | Out-Null
 Copy-Item (Join-Path $distPath 'index.html') (Join-Path $publicPath 'index.html') -Force
 
 if (Test-Path (Join-Path $distPath 'assets')) {
+  Get-ChildItem $assetsPath -Filter '*.js' -File | Remove-Item -Force
   Copy-Item (Join-Path $distPath 'assets/*') $assetsPath -Recurse -Force
 }
 

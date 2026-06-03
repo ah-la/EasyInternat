@@ -196,6 +196,18 @@ const mapProfile = (row = {}) => ({
   sorties: (row.sorties || []).map(mapSortie)
 })
 
+const mapAction = (row = {}) => ({
+  ...row,
+  id: String(row.id),
+  utilisateur: row.user?.name || row.user?.email || 'Systeme',
+  role: row.user?.role || '-',
+  action: row.action || '',
+  cible: String(row.target_type || '').split('\\').pop() || '-',
+  cible_id: row.target_id || '-',
+  description: row.description || '-',
+  date: row.created_at ? `${formatDate(row.created_at)} ${String(row.created_at).slice(11, 16)}` : ''
+})
+
 const mapDashboard = (row = {}) => ({
   ...row,
   recent_stagiaires: (row.recent_stagiaires || []).map(mapStagiaire),
@@ -211,6 +223,7 @@ async function list(path, mapper, params = {}) {
 
 export const store = {
   getDashboard: async () => mapDashboard((await api.get('/dashboard')).data),
+  getActions: (params) => list('/actions', mapAction, params),
 
   getStagiaires: (params) => list('/stagiaires', mapStagiaire, params),
   getStagiaireProfile: async (id) => mapProfile((await api.get(`/stagiaires/${id}/profile`)).data),

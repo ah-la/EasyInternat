@@ -137,8 +137,8 @@ function AuthPanel() {
       const session = await loginUser(values)
       toast.success('Connexion reussie.')
       navigate(destinationForRole(session.role), { replace: true })
-    } catch {
-      toast.error('Identifiants incorrects.')
+    } catch (error) {
+      toast.error(error.message || 'Identifiants incorrects.')
     } finally {
       setSubmitting(false)
     }

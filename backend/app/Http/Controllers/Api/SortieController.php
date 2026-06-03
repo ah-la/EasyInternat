@@ -81,6 +81,10 @@ class SortieController extends Controller
             return response()->json(['message' => 'Compte stagiaire introuvable'], 404);
         }
 
+        if (Sortie::where('stagiaire_id', $data['stagiaire_id'])->where('statut', 'sorti')->exists()) {
+            return response()->json(['message' => 'Vous avez deja une sortie active.'], 422);
+        }
+
         return Sortie::create($data + ['statut' => 'sorti'])->load('stagiaire.chambre');
     }
 
