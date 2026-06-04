@@ -6,6 +6,12 @@ Application web de gestion de residence CMC avec Laravel API, React, MySQL et au
 
 EasyInternat permet de gerer les demandes d'internat, les stagiaires, les chambres, les paiements, les sorties, les reclamations et les responsables filles/garcons. L'application contient aussi un dashboard avec statistiques, notifications, exports Excel/PDF et historique des actions.
 
+Documentation complementaire:
+
+- `docs/ERD.md`: schema Mermaid de la base de donnees.
+- `docs/README-DEMO.md`: scenario de demonstration pour la soutenance.
+- `docs/CHECKLIST-LIVRAISON.md`: checklist avant envoi du projet.
+
 ## Fonctionnalites
 
 - Authentification Laravel Sanctum avec roles `admin`, `responsable` et `stagiaire`.
@@ -30,9 +36,22 @@ EasyInternat permet de gerer les demandes d'internat, les stagiaires, les chambr
 
 ## Installation Backend
 
+### Option A - Depuis Git
+
 ```bash
 git clone https://github.com/ah-la/EasyInternat.git
 cd EasyInternat/backend
+composer install
+copy .env.example .env
+php artisan key:generate
+```
+
+### Option B - Depuis un ZIP local
+
+Si le projet est livre sous forme ZIP, extraire l'archive puis ouvrir le dossier:
+
+```bash
+cd gestion-residence-cmc-pro2/backend
 composer install
 copy .env.example .env
 php artisan key:generate
@@ -186,6 +205,26 @@ La table `paiements` stocke seulement les paiements reels payes. Les statuts `A 
 - Apres modification React : lancer `npm run build:laravel` pour mettre a jour `backend/public`.
 
 ## Livraison Professionnelle
+
+Pour generer un ZIP final propre:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/make-release.ps1
+```
+
+Le script cree:
+
+```text
+outputs/gestion-residence-cmc-pro2-clean.zip
+```
+
+Verifier que le ZIP ne contient pas de fichiers sensibles ou dependances:
+
+```bash
+tar -tf outputs/gestion-residence-cmc-pro2-clean.zip | rg ".env|.git|vendor|node_modules|frontend/dist"
+```
+
+Resultat attendu: aucun resultat.
 
 Ne pas publier :
 

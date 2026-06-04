@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
 import StagiaireMiniProfile from '../components/StagiaireMiniProfile.jsx'
-import { clearCurrentRole } from '../lib/authRole.js'
+import { logoutUser } from '../lib/logout.js'
 import { store } from '../lib/store.js'
 
 const emptyForm = {
@@ -31,8 +31,8 @@ export default function StagiaireSortie() {
       .catch(() => setProfile(null))
   }, [])
 
-  const logout = () => {
-    clearCurrentRole()
+  const logout = async () => {
+    await logoutUser()
     navigate('/', { replace: true })
   }
 
