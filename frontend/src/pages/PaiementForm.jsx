@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, Check, ChevronsUpDown, Plus, ReceiptText, X } from 'lucide-react'
 import { toast } from 'sonner'
@@ -19,9 +19,10 @@ export default function PaiementForm() {
   const role = getCurrentRole()
   const basePath = role === 'admin' ? '/admin' : '/responsable'
   const navigate = useNavigate()
+  const stagiairePickerRef = useRef(null)
   const [stagiaires, setStagiaires] = useState([])
   const [paiements, setPaiements] = useState([])
-  const [selectedMonths, setSelectedMonths] = useState(['Mai'])
+  const [selectedMonths, setSelectedMonths] = useState([])
   const [search, setSearch] = useState('')
   const [openSuggestions, setOpenSuggestions] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -49,12 +50,32 @@ export default function PaiementForm() {
         return
       }
 
-      if (visible[0]) {
-        setForm((currentForm) => ({ ...currentForm, stagiaire_id: currentForm.stagiaire_id || visible[0].id }))
-        setSearch(stagiaireLabel(visible[0]))
-      }
     })
   }, [id, role])
+
+  useEffect(() => {
+    if (!openSuggestions) return undefined
+
+    const closeOnOutsideClick = (event) => {
+      if (!stagiairePickerRef.current?.contains(event.target)) {
+        setOpenSuggestions(false)
+      }
+    }
+
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') {
+        setOpenSuggestions(false)
+      }
+    }
+
+    document.addEventListener('mousedown', closeOnOutsideClick)
+    document.addEventListener('keydown', closeOnEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', closeOnOutsideClick)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [openSuggestions])
 
   const selectedStagiaire = useMemo(
     () => stagiaires.find((stagiaire) => String(stagiaire.id) === String(form.stagiaire_id)),
@@ -143,7 +164,7 @@ export default function PaiementForm() {
       </div>
 
       <form onSubmit={submit} className="grid gap-4 md:grid-cols-2">
-        <label className="relative block md:col-span-2">
+        <label ref={stagiairePickerRef} className="relative block md:col-span-2">
           <span className="mb-2 block text-sm font-semibold text-primary">Stagiaire</span>
           <div className="relative">
             <input
@@ -154,10 +175,19 @@ export default function PaiementForm() {
               onFocus={() => setOpenSuggestions(true)}
               onChange={(event) => {
                 setSearch(event.target.value)
+                setForm((current) => ({ ...current, stagiaire_id: '' }))
+                setSelectedMonths([])
                 setOpenSuggestions(true)
               }}
             />
-            <ChevronsUpDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <button
+              type="button"
+              aria-label={openSuggestions ? 'Fermer la liste des stagiaires' : 'Ouvrir la liste des stagiaires'}
+              className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-muted transition hover:bg-cyan-soft hover:text-primary"
+              onClick={() => setOpenSuggestions((current) => !current)}
+            >
+              <ChevronsUpDown className="h-4 w-4" />
+            </button>
           </div>
           {openSuggestions ? (
             <div className="absolute z-20 mt-2 max-h-64 w-full overflow-auto rounded-2xl border border-sky-100 bg-white p-2 shadow-[0_18px_45px_rgba(7,59,92,0.14)]">

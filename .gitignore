@@ -21,6 +21,8 @@ frontend/node_modules/
 backend/vendor/
 
 # Build / runtime caches
+.agents/
+.vite-cache/
 frontend/dist/
 backend/public/build/
 backend/public/hot

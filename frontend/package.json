@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev.ps1",
+    "dev:vite": "vite",
     "build": "vite build",
     "build:laravel": "vite build && powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./scripts/copy-build.ps1",
     "preview": "vite preview"

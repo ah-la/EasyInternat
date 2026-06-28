@@ -2,189 +2,193 @@
 
 namespace Database\Seeders;
 
-use App\Models\{Chambre, Demande, Paiement, Reclamation, Stagiaire, StagiaireCentre, User};
+use App\Models\{Chambre, Paiement, Reclamation, Sortie, Stagiaire, StagiaireCentre, User};
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 
 class DemoStagiairesSeeder extends Seeder
 {
     public function run(): void
     {
-        $chambres = [
-            'F-101' => $this->chambre('F-101', 'filles', '1ere etage'),
-            'F-102' => $this->chambre('F-102', 'filles', '1ere etage'),
-            'G-201' => $this->chambre('G-201', 'garcons', '2eme etage'),
-            'G-202' => $this->chambre('G-202', 'garcons', '2eme etage'),
-        ];
+        DB::transaction(function () {
+            $this->clearOldDemoData();
 
-        $stagiaires = [
-            ['Ahlam', 'Hiba', 'AB123', '0600000000', 'Developpement Digital', 'filles', 'F-101'],
-            ['Salma', 'Bennani', 'EF1001', '0611111101', 'Infrastructure Digitale', 'filles', 'F-101'],
-            ['Aya', 'El Idrissi', 'EF1002', '0611111102', 'Gestion des Entreprises', 'filles', 'F-102'],
-            ['Imane', 'Rami', 'EF1003', '0611111103', 'Developpement Digital', 'filles', 'F-102'],
-            ['Nour', 'Amrani', 'EF1004', '0611111104', 'Reseaux Informatiques', 'filles', 'F-102'],
-            ['Yassine', 'Omar', 'CD456', '0622222201', 'Infrastructure Digitale', 'garcons', 'G-201'],
-            ['Mehdi', 'Alaoui', 'EG2001', '0622222202', 'Developpement Digital', 'garcons', 'G-201'],
-            ['Hamza', 'Fassi', 'EG2002', '0622222203', 'Reseaux Informatiques', 'garcons', 'G-202'],
-            ['Anas', 'Berrada', 'EG2003', '0622222204', 'Gestion des Entreprises', 'garcons', 'G-202'],
-            ['Othmane', 'Naciri', 'EG2004', '0622222205', 'Infrastructure Digitale', 'garcons', 'G-202'],
-        ];
+            $chambres = $this->seedChambres();
 
-        foreach ($stagiaires as $index => [$nom, $prenom, $cin, $telephone, $filiere, $category, $chambreNumero]) {
-            $genre = $category === 'filles' ? 'Fille' : 'Garcon';
-            $email = $index === 0 ? 'stagiaire@cmc.test' : strtolower($prenom.'.'.$nom.'@cmc.test');
+            $stagiaires = [
+                ['Salma', 'Bennani', 'EF1001', '0611111101', 'Developpement Digital', 'filles', 'F-101', 'stagiaire@cmc.test'],
+                ['Aya', 'El Idrissi', 'EF1002', '0611111102', 'Infrastructure Digitale', 'filles', 'F-101', 'aya.elidrissi@cmc.test'],
+                ['Imane', 'Rami', 'EF1003', '0611111103', 'Gestion des Entreprises', 'filles', 'F-102', 'imane.rami@cmc.test'],
+                ['Yassine', 'Omar', 'EG2001', '0622222201', 'Developpement Digital', 'garcons', 'G-201', 'yassine.omar@cmc.test'],
+                ['Mehdi', 'Alaoui', 'EG2002', '0622222202', 'Infrastructure Digitale', 'garcons', 'G-201', 'mehdi.alaoui@cmc.test'],
+                ['Hamza', 'Fassi', 'EG2003', '0622222203', 'Reseaux Informatiques', 'garcons', 'G-202', 'hamza.fassi@cmc.test'],
+            ];
 
-            $numeroInscription = match ($cin) {
-                'AB123' => 'CMC001',
-                'CD456' => 'CMC002',
-                default => 'DEMO-'.($category === 'filles' ? 'F' : 'G').'-'.str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT),
-            };
+            foreach ($stagiaires as $index => [$nom, $prenom, $cin, $telephone, $filiere, $category, $chambreNumero, $email]) {
+                $stagiaire = $this->seedStagiaire(
+                    $nom,
+                    $prenom,
+                    $cin,
+                    $telephone,
+                    $filiere,
+                    $category,
+                    $chambres[$chambreNumero],
+                    $email,
+                    $index
+                );
 
-            StagiaireCentre::updateOrCreate(
-                ['cin' => $cin],
-                [
-                    'nom' => $nom,
-                    'prenom' => $prenom,
-                    'numero_inscription' => $numeroInscription,
-                    'filiere' => $filiere,
-                    'genre' => $genre,
-                ]
-            );
-
-            $userAttributes = User::factory()
-                ->stagiaire($category)
-                ->make([
-                    'name' => $nom.' '.$prenom,
-                    'email' => $email,
-                ])
-                ->getAttributes();
-
-            unset($userAttributes['remember_token'], $userAttributes['email_verified_at']);
-            $user = User::updateOrCreate(['email' => $email], $userAttributes);
-
-            $stagiaireAttributes = Stagiaire::factory()
-                ->state($category === 'filles' ? ['genre' => 'Fille', 'category' => 'filles'] : ['genre' => 'Garcon', 'category' => 'garcons'])
-                ->make([
-                    'user_id' => $user->id,
-                    'nom' => $nom,
-                    'prenom' => $prenom,
-                    'cin' => $cin,
-                    'telephone' => $telephone,
-                    'filiere' => $filiere,
-                    'chambre_id' => $chambres[$chambreNumero]->id,
-                ])
-                ->getAttributes();
-
-            $stagiaire = Stagiaire::updateOrCreate(['cin' => $cin], $stagiaireAttributes);
-
-            $this->seedProfileData($stagiaire, $index);
-        }
-
-        $this->seedDemandes();
+                $this->seedPaiements($stagiaire, $index);
+                $this->seedReclamations($stagiaire, $index);
+                $this->seedSortie($stagiaire, $index);
+            }
+        });
     }
 
-    private function chambre(string $numero, string $category, string $etage): Chambre
+    private function clearOldDemoData(): void
     {
-        $attributes = Chambre::factory()
-            ->state(['numero' => $numero, 'category' => $category, 'etage' => $etage])
-            ->make()
-            ->getAttributes();
+        $stagiaireUserIds = User::where('role', 'stagiaire')->pluck('id');
 
-        return Chambre::updateOrCreate(['numero' => $numero], $attributes);
-    }
-
-    private function seedProfileData(Stagiaire $stagiaire, int $index): void
-    {
-        Paiement::where('stagiaire_id', $stagiaire->id)
-            ->whereIn('mois', ['Mars', 'Avril', 'Mai'])
+        DB::table('personal_access_tokens')
+            ->where('tokenable_type', User::class)
+            ->whereIn('tokenable_id', $stagiaireUserIds)
             ->delete();
 
-        $months = $index % 3 === 0 ? ['Mars', 'Avril'] : ['Mars', 'Avril', 'Mai'];
+        Sortie::query()->delete();
+        Paiement::query()->delete();
+        Reclamation::query()->delete();
+        Stagiaire::query()->delete();
+        User::where('role', 'stagiaire')->delete();
+        Chambre::query()->delete();
+        StagiaireCentre::query()->delete();
 
-        foreach ($months as $monthIndex => $mois) {
-            $attributes = Paiement::factory()
-                ->make([
-                    'stagiaire_id' => $stagiaire->id,
-                    'mois' => $mois,
-                    'statut' => 'paye',
-                    'date_paiement' => now()->subDays($monthIndex + 1),
+        if (DB::getSchemaBuilder()->hasTable('action_histories')) {
+            DB::table('action_histories')
+                ->whereIn('target_type', [
+                    Chambre::class,
+                    Paiement::class,
+                    Reclamation::class,
+                    Sortie::class,
+                    Stagiaire::class,
+                    User::class,
                 ])
-                ->getAttributes();
-
-            Paiement::updateOrCreate(
-                ['stagiaire_id' => $stagiaire->id, 'mois' => $mois],
-                $attributes
-            );
+                ->delete();
         }
-
-        $attributes = Reclamation::factory()
-            ->make([
-                'stagiaire_id' => $stagiaire->id,
-                'type' => $index % 2 === 0 ? 'Chambre' : 'Maintenance',
-                'sujet' => $index % 2 === 0 ? 'Probleme chambre' : 'Demande maintenance',
-                'message' => $index % 2 === 0 ? 'Probleme a verifier dans la chambre.' : 'Besoin d une intervention technique.',
-                'statut' => $index % 3 === 0 ? 'traitee' : 'en_attente',
-                'reponse_admin' => $index % 3 === 0 ? 'Votre reclamation a ete traitee.' : null,
-            ])
-            ->getAttributes();
-
-        Reclamation::updateOrCreate(
-            ['stagiaire_id' => $stagiaire->id, 'sujet' => $attributes['sujet']],
-            $attributes
-        );
     }
 
-    private function seedDemandes(): void
+    /**
+     * @return array<string, Chambre>
+     */
+    private function seedChambres(): array
     {
-        $demandes = [
-            ['Kenza', 'Mansouri', 'DMF1001', 'CMC-D-001', 'kenza.mansouri@cmc.test', '0633333301', 'Fille', 'Developpement Digital'],
-            ['Lina', 'Tazi', 'DMF1002', 'CMC-D-002', 'lina.tazi@cmc.test', '0633333302', 'Fille', 'Infrastructure Digitale'],
-            ['Ilyass', 'Radi', 'DMG2001', 'CMC-D-003', 'ilyass.radi@cmc.test', '0644444401', 'Garcon', 'Developpement Digital'],
-            ['Adil', 'Mekki', 'DMG2002', 'CMC-D-004', 'adil.mekki@cmc.test', '0644444402', 'Garcon', 'Gestion des Entreprises'],
+        $rooms = [
+            ['F-101', 'filles', '1ere etage'],
+            ['F-102', 'filles', '1ere etage'],
+            ['G-201', 'garcons', '2eme etage'],
+            ['G-202', 'garcons', '2eme etage'],
         ];
 
-        foreach ($demandes as [$nom, $prenom, $cin, $numero, $email, $telephone, $genre, $filiere]) {
-            $certificatePath = $this->demoCertificatePath($cin);
+        $chambres = [];
 
-            StagiaireCentre::updateOrCreate(
-                ['cin' => $cin],
-                [
-                    'nom' => $nom,
-                    'prenom' => $prenom,
-                    'numero_inscription' => $numero,
-                    'filiere' => $filiere,
-                    'genre' => $genre,
-                ]
-            );
+        foreach ($rooms as [$numero, $category, $etage]) {
+            $chambres[$numero] = Chambre::create([
+                'numero' => $numero,
+                'category' => $category,
+                'etage' => $etage,
+                'capacite' => 4,
+                'statut' => 'disponible',
+            ]);
+        }
 
-            $attributes = Demande::factory()
-                ->make([
-                    'nom' => $nom,
-                    'prenom' => $prenom,
-                    'cin' => $cin,
-                    'numero_inscription' => $numero,
-                    'email' => $email,
-                    'telephone' => $telephone,
-                    'genre' => $genre,
-                    'filiere' => $filiere,
-                    'certificat_residence' => $certificatePath,
-                    'statut' => 'en_attente',
-                ])
-                ->getAttributes();
+        return $chambres;
+    }
 
-            Demande::updateOrCreate(['cin' => $cin], $attributes);
+    private function seedStagiaire(
+        string $nom,
+        string $prenom,
+        string $cin,
+        string $telephone,
+        string $filiere,
+        string $category,
+        Chambre $chambre,
+        string $email,
+        int $index
+    ): Stagiaire {
+        $genre = $category === 'filles' ? 'Fille' : 'Garcon';
+
+        StagiaireCentre::create([
+            'nom' => $nom,
+            'prenom' => $prenom,
+            'cin' => $cin,
+            'numero_inscription' => 'CMC-'.str_pad((string) ($index + 1), 3, '0', STR_PAD_LEFT),
+            'filiere' => $filiere,
+            'genre' => $genre,
+        ]);
+
+        $user = User::factory()
+            ->stagiaire($category)
+            ->create([
+                'name' => $nom.' '.$prenom,
+                'email' => $email,
+            ]);
+
+        return Stagiaire::create([
+            'user_id' => $user->id,
+            'nom' => $nom,
+            'prenom' => $prenom,
+            'cin' => $cin,
+            'telephone' => $telephone,
+            'genre' => $genre,
+            'filiere' => $filiere,
+            'chambre_id' => $chambre->id,
+            'category' => $category,
+        ]);
+    }
+
+    private function seedPaiements(Stagiaire $stagiaire, int $index): void
+    {
+        $months = $index % 2 === 0 ? ['Avril', 'Mai', 'Juin'] : ['Mai', 'Juin'];
+
+        foreach ($months as $monthIndex => $mois) {
+            Paiement::create([
+                'stagiaire_id' => $stagiaire->id,
+                'mois' => $mois,
+                'montant' => 300,
+                'statut' => 'paye',
+                'mode_paiement' => $monthIndex % 2 === 0 ? 'Especes' : 'Virement',
+                'numero_recu' => 'REC-'.$stagiaire->id.'-'.str_pad((string) ($monthIndex + 1), 2, '0', STR_PAD_LEFT),
+                'date_paiement' => now()->subDays(($monthIndex + 1) * 5)->toDateString(),
+            ]);
         }
     }
 
-    private function demoCertificatePath(string $cin): string
+    private function seedReclamations(Stagiaire $stagiaire, int $index): void
     {
-        $path = 'certificats/demo-'.$cin.'.png';
+        $isHandled = $index % 3 === 0;
 
-        if (!Storage::disk('public')->exists($path)) {
-            $png = 'iVBORw0KGgoAAAANSUhEUgAAASwAAABkCAYAAABkW7XSAAAAAXNSR0IArs4c6QAAAjVJREFUeF7t1sENgCAMRFF8sH8n7QpHcAlmQIR+QtLcN1m+o5wzAAAAAAAAAAAAAAAAAAAAAADwWV2qCwAAwI8CBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIMCBQIwKFAgAIPgBQAAAAAAAAAAAAAAAAAAAAAAAMBf9gGdNQKmtX+L5QAAAABJRU5ErkJggg==';
-            Storage::disk('public')->put($path, base64_decode($png));
-        }
+        Reclamation::create([
+            'stagiaire_id' => $stagiaire->id,
+            'type' => $index % 2 === 0 ? 'Chambre' : 'Maintenance',
+            'sujet' => $index % 2 === 0 ? 'Probleme chambre' : 'Demande maintenance',
+            'message' => $index % 2 === 0
+                ? 'Probleme a verifier dans la chambre.'
+                : 'Besoin d une intervention technique.',
+            'statut' => $isHandled ? 'traitee' : 'en_attente',
+            'reponse_admin' => $isHandled ? 'Votre reclamation a ete traitee.' : null,
+            'reponse_at' => $isHandled ? now()->subDays(1) : null,
+        ]);
+    }
 
-        return $path;
+    private function seedSortie(Stagiaire $stagiaire, int $index): void
+    {
+        Sortie::create([
+            'stagiaire_id' => $stagiaire->id,
+            'date_sortie' => now()->subDays($index + 1)->toDateString(),
+            'heure_sortie' => '09:00',
+            'date_retour' => now()->addDays($index % 2 === 0 ? 1 : 2)->toDateString(),
+            'heure_retour_prevue' => '18:00',
+            'contact' => $stagiaire->telephone,
+            'motif' => $index % 2 === 0 ? 'Visite familiale' : 'Rendez-vous administratif',
+            'statut' => $index % 3 === 0 ? 'retourne' : 'sorti',
+        ]);
     }
 }
