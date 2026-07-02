@@ -20,7 +20,7 @@ class SortieController extends Controller
 
     public function index(Request $request)
     {
-        $query = Sortie::with('stagiaire.chambre');
+        $query = Sortie::with('stagiaire.chambre')->whereHas('stagiaire');
         $user = $request->user();
 
         if ($user && $user->role === 'responsable' && $user->category) {

@@ -247,6 +247,7 @@ class StagiaireController extends Controller
         DB::transaction(function () use ($stagiaire) {
             $user = $stagiaire->user;
 
+            $stagiaire->sorties()->delete();
             $stagiaire->delete();
 
             if ($user && $user->role === 'stagiaire' && !$user->stagiaire()->exists()) {
